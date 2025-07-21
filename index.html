@@ -1626,7 +1626,7 @@ function closeOpenJobsSelector() {
   document.getElementById('ot-btn').onclick = function() {
     const now = new Date();
     if (now.getHours() < 17) {
-      alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:00 น.');
+              alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:30 น.');
       return;
     }
     document.getElementById('ot-modal').style.display = 'flex';
