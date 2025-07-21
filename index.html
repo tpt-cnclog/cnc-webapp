@@ -823,6 +823,9 @@
   let scanHandled = false;
   let isSubmitting = false;
 
+  // Define the endpoint URL once at the top of the script
+  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzJQYUFo_oMQzdYC0fXFdm3nrUDoEGE0GAjvcvMxwMqRiO_APDn1C2r3Q5m3zSgxNL-sw/exec";
+
   // Validate Step No. input to allow numbers and plus signs
   function validateStepNo(input) {
     let value = input.value;
@@ -953,13 +956,12 @@
   // Show modal to select open job to pause
   function fetchOpenJobsAndShowPauseSelector() {
   showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
-  const params = new URLSearchParams({
-    mode: 'openJobs',
-    projectNo: qrData.projectNo,
-    partName: qrData.partName
-  });
-  fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
     .then(res => res.json())
     .then(openJobs => {
       hideOpenJobsLoading();
@@ -1254,7 +1256,6 @@ function closeOpenJobsSelector() {
       }});
       closePauseReasonModal();
       showScreen('loading-screen');
-      const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
       fetch(GAS_ENDPOINT, {
         method: "POST",
         mode: "cors",
@@ -1344,7 +1345,6 @@ function closeOpenJobsSelector() {
   // Show modal to select paused job to continue
   function fetchPausedJobsAndShowContinueSelector() {
     showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1437,7 +1437,6 @@ function closeOpenJobsSelector() {
     if (!confirm('คุณต้องการดำเนินงานนี้ต่อใช่หรือไม่?')) return;
     closeContinueJobsSelector();
     showScreen('loading-screen');
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1482,7 +1481,6 @@ function closeOpenJobsSelector() {
   // Fetch open jobs and show the stop selector modal
   function fetchOpenJobsAndShowStopSelector() {
     showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1517,7 +1515,6 @@ function closeOpenJobsSelector() {
       employeeCode: formData.get('employeeCode'),
       status: 'OPEN'
     };
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1561,7 +1558,6 @@ function closeOpenJobsSelector() {
       rework: formData.get('rework'),
       status: 'CLOSE'
     };
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1607,7 +1603,6 @@ function closeOpenJobsSelector() {
     closeMachineSettingModal();
     // Fetch open jobs and show stop selector, but only for Machine Setting jobs
     showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1643,7 +1638,6 @@ function closeOpenJobsSelector() {
     closeOTModal();
     // Fetch open jobs and show selector for OT start
     showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1741,7 +1735,6 @@ function closeOpenJobsSelector() {
     if (!confirm('คุณต้องการเริ่ม OT ใช่หรือไม่?')) return;
     closeOpenJobsSelector();
     showScreen('loading-screen');
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1777,7 +1770,6 @@ function closeOpenJobsSelector() {
     closeOTModal();
     // Fetch open jobs and show stop selector, but only for OT jobs
     showOpenJobsLoading();
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1870,7 +1862,6 @@ function closeOpenJobsSelector() {
     if (!confirm('คุณต้องการหยุด OT ใช่หรือไม่?')) return;
     closeOpenJobsSelector();
     showScreen('loading-screen');
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1919,7 +1910,6 @@ function closeOpenJobsSelector() {
     // Show loading spinner only when fetching from backend
     container.innerHTML = '<div style="margin-top:10px; text-align:center;"><span class="loader-spinner" style="width:32px; height:32px; border-width:4px; display:inline-block; vertical-align:middle;"></span> <span style="font-size:1.1em; color:#888;">กำลังโหลด...</span></div>';
 
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
