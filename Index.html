@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPT-CNC JOB LOG
+  </title>
+  <link rel="icon" type="image/png" href="JOBLOG LOGO.png">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <link href="https://fonts.googleapis.com/css?family=Sarabun:400,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #e3eafc 0%, #f4f4f4 100%);
+      font-family: 'Sarabun', 'Inter', Arial, sans-serif;
+      margin: 0;
+      color: #111;
+      min-height: 100vh;
+    }
+    main {
+      max-width: 900px;
+      margin: 10px auto 0 auto;
+      padding: 0 0 60px 0;
+      background: #fff;
+      min-height: 80vh;
+      border-radius: 30px;
+      box-sizing: border-box;
+      box-shadow: 0 8px 40px 0 #90caf933, 0 1.5px 8px #bdbdbd33;
+      backdrop-filter: blur(2.5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    h1 {
+      color: #111;
+      text-align: center;
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-top: 20px;
+      margin-bottom: 10;
+      letter-spacing: 0.01em;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px #e3eafc;
+    }
+    h2 {
+      color: #111;
+      text-shadow: 0 1px 4px #e3eafc;
+      margin-bottom: 12px;
+      font-weight: 700;
+      font-size: 2rem;
+    }
+    .instruction-box {
+      background: transparent;
+      color: #111;
+      box-shadow: 0 2px 12px #90caf922;
+      font-size: 1.5rem;
+      border-radius: 10px;
+      display: inline-block;
+      padding: 10px 60px;
+      margin-top: 5px;
+      margin-bottom: 0px;
+      letter-spacing: 0.01em;
+      font-weight: 300;
+      transition: background 0.2s, border 0.2s;
+    }
+    .instruction-box span {
+      font-family: 'Sarabun', 'Inter', Arial, sans-serif;
+      font-weight: 300;
+      opacity: 1;
+    }
+    /* Scanner animation: pulsing border */
+    #qr-reader {
+      width: 80vw;
+      max-width: 600px;
+      min-width: 220px;
+      margin: 18px auto 0 auto;
+      background: #f4f4f4cc;
+      border-radius: 22px;
+      box-shadow: 0 8px 32px 0 #90caf933, 0 1.5px 8px #bdbdbd33;
+      border: 0px solid #1976d2;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s, border 0.2s;
+      min-height: 340px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    /* Scanner animation: pulsing border */
+    #qr-reader.active {
+      animation: pulse-border 1.5s infinite;
+      box-shadow: 0 0 0 15px #90caf988, 0 8px 32px 0 #90caf933;
+    }
+    @keyframes pulse-border {
+      0% {
+        box-shadow: 0 0 0 0 #90caf988, 0 0 0 0 #90caf933;
+      }
+      70% {
+        box-shadow: 0 0 0 18px #90caf933, 0 0 0 8px #90caf922;
+      }
+      100% {
+        box-shadow: 0 0 0 0 #90caf988, 0 0 0 0 #90caf933;
+      }
+    }
+    /* Optional: animated scanning line */
+    #qr-reader .scan-line {
+      position: absolute;
+      left: 10%; right: 10%; height: 4px;
+      background: linear-gradient(90deg, #90caf9 0%, #1976d2 100%);
+      border-radius: 2px;
+      animation: scan-move 1.3s linear infinite;
+      z-index: 2;
+      opacity: 0.92;
+      box-shadow: 0 0 12px #1976d288;
+    }
+    @keyframes scan-move {
+      0% { top: 12%; }
+      100% { top: 120%; }
+    }
+    .btn-main {
+      background: linear-gradient(90deg, #90caf9 0%, #1976d2 100%);
+      color: #111;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 14px;
+      padding: 20px 30px;
+      margin: 40px 0 0 0;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 2px 12px #90caf944;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-main:active { background: #1976d2; color: #fff; }
+    .form-section {
+      background: #f4f4f4;
+      border-radius: 22px;
+      padding: 38px 40px;
+      margin: 36px 0;
+      box-shadow: 0 2px 16px #90caf922;
+      
+    }
+    .job-info {
+      background: #fae1cd;
+      border-radius: 22px;
+      padding: 20px 20px;
+      padding-top: 10px;
+      margin: 36px 0;
+      box-shadow: 0 2px 16px #90caf922;
+      margin-top: 8px !important;
+      width: 95%;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .job-info p { margin: 12px 0; font-weight: 500; font-size: 1.25rem; color: #111; }
+    .btn-row {
+      display: flex;
+      gap: 30px;
+      margin-top: 20px;
+      width: 95%;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-row button,
+    .btn-row .btn-secondary {
+      width: 100%;
+      min-width: 220px;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    .btn-row.secondary-btn-row {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+    }
+    @media (max-width: 600px) {
+      .btn-row {
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      .btn-row.secondary-btn-row {
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: stretch !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+      .btn-row.secondary-btn-row button,
+      .btn-row.secondary-btn-row .btn-secondary {
+        max-width: 100vw;
+        min-width: 0;
+        width: 50%;
+      }
+    }
+    @media (max-width: 600px) {
+      .btn-row {
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+      .btn-row button,
+      .btn-row .btn-secondary {
+        max-width: 100vw;
+        min-width: 0;
+        width: 100%;
+      }
+    }
+    .btn-green, .btn-red {
+      flex: 1;
+      font-size: 2rem;
+      padding: 20px 100px;
+      border: none;
+      border-radius: 18px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #1976d244;
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .btn-green {
+      background: linear-gradient(90deg, #00c853 0%, #43e97ad5 100%);
+      text-shadow: 1px 2px 8px #222a, 0 1px 0 #fff2;
+    }
+    .btn-red {
+      background: linear-gradient(90deg, #e53935 0%, #ff5252d5 100%);
+      text-shadow: 1px 2px 8px #222a, 0 1px 0 #fff2;
+    }
+    .btn-green:hover, .btn-green:focus { background: #00b800; }
+    .btn-green:active { background: #009900; }
+    .btn-red:hover, .btn-red:focus { background: #b80000; }
+    .btn-red:active { background: #990000; }
+    .btn-back {
+      background: #e3eafc;
+      color: #1976d2;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      cursor: pointer;
+      text-align: left;
+      padding: 8px 18px 8px 12px;
+      border-radius: 14px;
+      box-shadow: 0 3px 10px #90caf955, 0 1px 4px #bdbdbd33;
+      transition: background 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      font-weight: 700;
+      border: none;
+    }
+    .btn-back:hover, .btn-back:focus {
+      background: #bbdefb;
+      box-shadow: 0 6px 24px #90caf988, 0 2px 12px #bdbdbd33;
+    }
+    .btn-back:active {
+      background: #90caf9;
+      color: #fff;
+    }
+    .form-section label { font-weight: bold; margin-top: 15px; display: block; }
+    .form-section input, .form-section select {
+      width: 100%;
+      font-size: 1.25rem;
+      padding: 16px 16px;
+      margin-top: 8px;
+      border-radius: 12px;
+      border: 1.5px solid #90caf9;
+      box-sizing: border-box;
+      background: transparent;
+      color: #111;
+      transition: border 0.18s, box-shadow 0.18s;
+    }
+    .form-section input:focus, .form-section select:focus {
+      border: 1.5px solid #1976d2;
+      box-shadow: 0 2px 8px #90caf944;
+      outline: none;
+    }
+    .form-section select {
+      height: 48px !important;
+      line-height: 48px !important;
+      min-width: 0;
+      max-width: 100%;
+      padding: 0 16px !important;
+      border-radius: 12px !important;
+      border: 1.5px solid #90caf9 !important;
+      background-color: #e3eeff !important;
+      color: #111 !important;
+      font-size: 1.25rem !important;
+      font-family: 'Sarabun', 'Inter', Arial, sans-serif !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      background: url('data:image/svg+xml;utf8,<svg fill="%231976d2" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 8.293a1 1 0 011.414 0L10 9.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>') no-repeat right 16px center/20px 20px !important;
+      box-sizing: border-box !important;
+      margin-top: 8px !important;
+      display: block;
+    }
+    .form-section input[readonly] { background: transparent; }
+    .form-section .btn-row { margin-top: 30px; }
+    .form-section button[type="submit"] {
+      background: linear-gradient(90deg, #90caf9 0%, #1976d2 100%);
+      color: #111;
+      font-size: 1.3rem;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 0;
+      width: 100%;
+      margin-top: 20px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px #90caf944;
+      transition: background 0.18s, color 0.18s;
+    }
+    .form-section button[type="submit"]:hover, .form-section button[type="submit"]:focus {
+      background: #1976d2;
+      color: #fff;
+    }
+    .confirm-section { background: #fff; border-radius: 30px; padding: 60px 30px; margin: 60px 0; text-align: center; }
+    .confirm-section h2 { font-size: 2rem; margin-bottom: 30px; }
+    .confirm-section button {
+      background: linear-gradient(90deg, #90caf9 0%, #1976d2 100%);
+      color: #111;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 30px;
+      margin-top: 20px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px #90caf944;
+      transition: background 0.18s, color 0.18s;
+    }
+    .confirm-section button:hover, .confirm-section button:focus {
+      background: #1976d2;
+      color: #fff;
+    }
+    @media (max-width: 600px) {
+      main { max-width: 100vw; border-radius: 0; }
+      .job-info, .form-section, .confirm-section { padding: 15px; }
+      .btn-green, .btn-red { font-size: 1.2rem; padding: 15px 0; }
+      .qr-bounding-box, #qr-reader {
+        max-width: 98vw;
+        aspect-ratio: 4/3.2;
+      }
+    }
+    /* Center scan screen vertically and horizontally */
+    #scan-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 60vh;
+      margin: 0 auto;
+    }
+    button, .btn-main, .btn-green, .btn-red, .btn-back, .confirm-section button {
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    button:hover, .btn-main:hover, .btn-green:hover, .btn-red:hover, .btn-back:hover, .confirm-section button:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 2px 8px #90caf944;
+    }
+    /* Loader spinner for loading screen */
+    .loader-spinner {
+      margin: 0 auto;
+      margin-top: 12px;
+      border: 6px solid #e3eafc;
+      border-top: 6px solid #1976d2;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      animation: spin 1s linear infinite;
+      box-shadow: 0 2px 12px #90caf944;
+      display: block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .form-section label, .job-info, .job-info p, .form-section input[readonly] {
+      color: #111;
+    }
+    .job-info {
+      margin-top: 5px; /* reduce if needed */
+    }
+    .qr-bounding-box {
+      border: 10px inset #1976d2;
+      border-radius: 50px;
+      background: #e3eafc;
+      box-shadow: 0 2px 16px #90caf922;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 680px;
+      aspect-ratio: auto;
+      padding: 0px 0 30px 0;
+      height: auto;
+    }
+    #qr-reader {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: auto;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: auto;
+      box-shadow: 0 0 0 0 transparent;
+    }
+    /* .top-bounding-box {
+      border: none;
+      border-radius: 24px;
+      background: #f4f6fb;
+      padding: 24px 5px 10px 5px;
+      margin: 5px auto 32px auto;
+      max-width: 480px;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    } */
+    
+    /* Mobile vertical centering fix */
+    @media (max-width: 600px) {
+      html, body {
+        width: 100vw;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        width: 100vw;
+        max-width: 100vw;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .qr-bounding-box {
+        padding: 0 0 12px 0;
+        max-width: 100vw;
+        width: 100vw;
+        margin: 0;
+      }
+      #qr-reader {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
+      }
+      .branding-icon {
+        margin-top: auto;
+        margin-bottom: 10px;
+      }
+      h1 {
+        margin-top: 8px;
+        margin-bottom: 30px;
+      }
+    }
+    @media (max-width: 600px) {
+      .qr-bounding-box {
+        max-width: 98vw;
+        aspect-ratio: auto;
+        padding-bottom: 15px;
+      }
+      #qr-reader {
+        max-width: 96vw;
+        aspect-ratio: auto;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: auto;
+      }
+    }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    .btn-secondary {
+      font-size: 1.25rem;
+      padding: 18px 0;
+      border: none;
+      border-radius: 18px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #1976d244;
+      transition: background 0.18s, box-shadow 0.18s;
+      margin: 0px 10px;
+    }
+    .btn-secondary.pause {
+      background: #FFF59D;
+      color: #222;
+    }
+    .btn-secondary.continue {
+      background: #90caf9;
+      color: #222;
+    }
+    @media (max-width: 600px) {
+      .btn-secondary {
+        font-size: 0.8rem;
+        padding: 15px 0;
+      }
+    }
+    @media (max-width: 600px) {
+      .btn-row,
+      .btn-row.secondary-btn-row {
+        flex-direction: column !important;
+        max-width: 100vw;
+        width: 100vw;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      .btn-row button,
+      .btn-row .btn-secondary {
+        max-width: 100vw;
+        min-width: 0;
+        width: 100vw;
+      }
+    }
+    #pause-reason-modal {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255,255,255,0.85);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pause-reason-modal-content {
+      background: #fff;
+      border-radius: 18px;
+      padding: 32px 24px;
+      max-width: 400px;
+      width: 100%;
+      margin: 0;
+      box-shadow: 0 2px 24px #0005;
+      position: relative;
+    }
+    @media (max-width: 600px) {
+      .btn-row {
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+      }
+      .btn-row button {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+      }
+      #info-screen {
+        padding-left: 3px !important;
+        padding-right: 3px !important;
+      }
+    }
+    @media (max-width: 600px) {
+      main {
+        max-width: 100vw;
+        width: 100vw;
+        border-radius: 0;
+        margin: 0;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        padding-bottom: 60px !important;
+      }
+      .btn-row {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+      #info-screen {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .job-info, .form-section, .confirm-section {
+        padding: 10px;
+      }
+    }
+    .btn-machine-setting {
+      background: #ffb74d;
+      color: #222;
+    }
+    .btn-row.secondary-btn-row {           /* keep row horizontal */
+    flex-direction: row !important;
+    gap: 8px !important;
+    }
+    .btn-row.secondary-btn-row button,
+    .btn-row.secondary-btn-row .btn-secondary {
+      flex: 1 1 50%;                      /* two equal columns   */
+      max-width: 50%;
+      width: 50%;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <!-- Scan Screen -->
+  <div id="scan-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%;">
+    <div class="branding-icon" style="text-align:center;">
+      <img src="logo2024-Black.png" alt="Company Logo" style="height:56px; width:auto; display:block; margin-top: 20px;  margin-bottom: -20px;" />
+    </div>
+    <h1 style="text-align:center;">CNC JOB LOG</h1>
+    <div class="qr-bounding-box" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+      <div style="text-align:center; margin: 5px 0 12px 0; width: 100%;">
+        <span class="instruction-box"><span>แสกน QR Code ตรงนี้</span></span>
+      </div>
+      <div id="qr-reader" class="active"></div>
+    </div>
+  </div>
+
+  <!-- Job Info Screen -->
+  <div id="info-screen" style="display:none;">
+    <button class="btn-back" style="margin-top:25px; margin-bottom:30px; margin-left: 20px;" onclick="resetAll()">← <span style="font-size:1em; vertical-align:middle;">แสกน QR Code</span></button>
+    <div class="main-bounding-box" style="border:2px solid #e0e0e0; border-radius:24px; padding:18px 0 32px 0; margin-bottom:24px; margin-left: 5px; margin-right: 5px; background:#ececec;">
+    <h1>CNC JOB LOG</h1>
+    <div class="job-info" id="job-info"></div>
+    <div class="btn-row">
+        <button class="btn-green main-btn" onclick="showScreen('start-form')">
+          <i class="fas fa-play" style="font-size:1.3em;"></i>
+          <span>เริ่มงานใหม่</span>
+        </button>
+        <button class="btn-red main-btn" onclick="fetchOpenJobsAndShowStopSelector()">
+          <i class="fas fa-stop" style="font-size:1.3em;"></i>
+          <span>งานเสร็จสิ้น</span>
+        </button>
+      </div>
+      <div class="btn-row secondary-btn-row">
+        <button class="btn-secondary pause secondary-btn" onclick="fetchOpenJobsAndShowPauseSelector()">
+          <i class="fas fa-pause" style="font-size:1.3em;"></i>
+          <span>หยุดชั่วคราว/Downtime</span>
+        </button>
+        <button class="btn-secondary continue secondary-btn" onclick="fetchPausedJobsAndShowContinueSelector()">
+          <i class="fas fa-forward" style="font-size:1.3em;"></i>
+          <span>ดำเนินการต่อ</span>
+        </button>
+      </div>
+      <div class="btn-row secondary-btn-row">
+        <button id="machine-setting-btn" class="btn-secondary btn-machine-setting secondary-btn" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="document.getElementById('machine-setting-modal').style.display = 'flex';">
+          <i class="fas fa-cogs" style="font-size:1.3em;"></i>
+          <span>Machine Setting</span>
+        </button>
+        <button id="ot-btn" class="btn-secondary btn-ot secondary-btn" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#fff;" onclick="document.getElementById('ot-modal').style.display = 'flex';">
+          <i class="fas fa-clock" style="font-size:1.3em;"></i>
+          <span>OT</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Form Screen -->
+  <form id="start-form" class="form-section" style="display:none;" onsubmit="submitStart(event)">
+    <button class="btn-back" type="button" onclick="showScreen('info-screen')">← กลับไปก่อนหน้า</button>
+    <h2>เริ่มงาน</h2>
+    <div id="start-job-info" class="job-info"></div>
+    <label>Process Name:</label>
+    <select name="processName" required>
+      <option value="">เลือก</option>
+      <option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+      <option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option> Machine Setting</option>
+    </select>
+    <label>Process No.:</label>
+    <input type="number" name="processNo" required min="1" max="20" inputmode="numeric">
+    <label>Step No.:</label>
+    <input type="text" name="stepNo" required pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" onblur="validateStepNo(this)">
+    <label>Machine No.:</label>
+    <input name="machineNo" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01">
+    <label>รหัสพนักงาน:</label>
+    <input name="employeeCode" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001">
+    <button type="submit">กดเพื่อส่ง</button>
+  </form>
+
+  <!-- Stop Form Screen -->
+  <form id="stop-form" class="form-section" style="display:none;" onsubmit="submitStop(event)">
+    <button class="btn-back" type="button" onclick="showScreen('info-screen')">← กลับไปก่อนหน้า</button>
+    <h2>งานเสร็จสิ้น</h2>
+    <div id="stop-job-info" class="job-info">  </div>
+    <label>Process Name:</label>
+    <select name="processName" required>
+      <option value="">เลือก</option>
+      <option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+      <option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option value="Machine Setting">Machine Setting</option>
+    </select>
+    <label>Process No.:</label>
+    <input type="number" name="processNo" required min="1" max="20" inputmode="numeric">
+    <label>Step No.:</label>
+    <input type="text" name="stepNo" required pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" onblur="validateStepNo(this)">
+    <label>Machine No.:</label>
+    <input name="machineNo" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01">
+    <label>รหัสพนักงาน:</label>
+    <input name="employeeCode" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001">
+    <div class="stop-extra-field" id="fg-row">
+    <label>FG จำนวน:</label>
+    <input type="number" name="fg" required inputmode="numeric">
+    </div>
+    <div class="stop-extra-field" id="ng-row">
+    <label>NG จำนวน:</label>
+    <input type="number" name="ng" required inputmode="numeric">
+    </div>
+    <div class="stop-extra-field" id="rework-row">
+    <label>Rework จำนวน:</label>
+    <input type="number" name="rework" required inputmode="numeric">
+    </div>
+    <button type="submit">กดเพื่อส่ง</button>
+  </form>
+
+  <!-- Confirmation Screen -->
+  <div id="confirm-screen" class="confirm-section" style="display:none;">
+    <h2>ข้อมูลถูกส่งเข้าสู่ระบบเรียบร้อยแล้ว</h2>
+    <button onclick="resetAll()">กลับไปหน้าแสกน QR Code</button>
+  </div>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="confirm-section" style="display:none;">
+    <div class="loader-spinner" aria-label="กำลังโหลด" role="status"></div>
+    <h2 style="margin-top:32px;">กำลังส่งข้อมูล...</h2>
+  </div>
+  <!-- Pause/Downtime Reason Modal -->
+  <div id="pause-reason-modal" style="display:none;">
+    <div class="pause-reason-modal-content">
+      <h2 style="text-align:center;">เลือกประเภทการหยุดงาน</h2>
+      <form id="pause-reason-form">
+        <div style="margin-bottom:18px;">
+          <label><input type="radio" name="pauseType" value="PAUSE" required> หยุดชั่วคราว (Pause)</label><br>
+          <label><input type="radio" name="pauseType" value="DOWNTIME"> Down Time</label>
+        </div>
+        <div id="pause-reason-text" style="display:none; margin-bottom:18px;">
+          <label>เลือกเหตุผลหยุดชั่วคราว (Pause):</label>
+          <select name="pauseReasonSelect" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
+            <option value="">-- เลือกเหตุผล --</option>
+            <option>รองาน</option>
+            <option>Wait for Data inspection</option>
+            <option value="other">อื่นๆ โปรดระบุ (Other)</option>
+          </select>
+        </div>
+        <div id="pause-other-reason" style="display:none; margin-bottom:18px;">
+          <label>โปรดระบุเหตุผล (Pause):</label>
+          <input type="text" name="pauseOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" maxlength="100">
+        </div>
+        <div id="downtime-reason-select" style="display:none; margin-bottom:18px;">
+          <label>เลือกเหตุผล Down Time:</label>
+          <select name="downtimeReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
+            <option value="">-- เลือกเหตุผล --</option>
+            <option>Change Tool</option>
+            <option>Over Spec</option>
+            <option>Machine Error</option>
+            <option>Program Error</option>
+            <option>ไฟดับ</option>
+            <option>ลมตก</option>
+            <option value="other">อื่นๆ โปรดระบุ (Other)</option>
+          </select>
+        </div>
+        <div id="downtime-other-reason" style="display:none; margin-bottom:18px;">
+          <label>โปรดระบุเหตุผล:</label>
+          <input type="text" name="downtimeOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" maxlength="100">
+        </div>
+        <div style="text-align:center;">
+          <button type="submit" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ส่งข้อมูล</button>
+          <button type="button" onclick="closePauseReasonModal()" style="padding:10px 24px; border-radius:10px; background:#aaa; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin-left:10px;">ยกเลิก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- Machine Setting Modal -->
+<div id="machine-setting-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+    <h2>Machine Setting</h2>
+    <p>เลือกประเภทการทำงาน</p>
+    <button id="machine-setting-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม</button>
+    <button id="machine-setting-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด</button>
+    <br><br>
+    <button onclick="closeMachineSettingModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- OT Modal -->
+<div id="ot-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+    <h2>OT (Overtime)</h2>
+    <p>เลือกประเภทการทำงาน OT</p>
+    <button id="ot-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม OT</button>
+    <button id="ot-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด OT</button>
+    <br><br>
+    <button onclick="closeOTModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
+  </div>
+</div>
+
+<script>
+  // Ensure all functions are in the global scope
+
+  // Global QR data object
+  let qrData = {};
+  let scanHandled = false;
+  let isSubmitting = false;
+
+  // Validate Step No. input to allow numbers and plus signs
+  function validateStepNo(input) {
+    let value = input.value;
+    value = value.replace(/[^0-9+]/g, '');
+    value = value.replace(/^\+/, '').replace(/\+$/, '');
+    value = value.replace(/\+\+/g, '+');
+    input.value = value;
+    const pattern = /^[0-9]+(\+[0-9]+)*$/;
+    if (value && !pattern.test(value)) {
+      input.setCustomValidity('กรุณาใส่ตัวเลขและเครื่องหมาย + เท่านั้น เช่น 1 หรือ 1+2+3');
+    } else {
+      input.setCustomValidity('');
+    }
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('main > *').forEach(el => el.style.display = 'none');
+    document.getElementById(id).style.display = '';
+    if (id === 'scan-screen') {
+      scanHandled = false;
+      startScan();
+      document.getElementById('start-job-info').innerHTML = '';
+      document.getElementById('stop-job-info').innerHTML = '';
+      document.getElementById('job-info').innerHTML = '';
+    } else {
+      if (window.qrScanner) {
+        window.qrScanner.stop().catch(()=>{});
+        window.qrScanner = null;
+      }
+      const qrReader = document.getElementById('qr-reader');
+      qrReader.classList.remove('active');
+      if (qrReader.querySelector('.scan-line')) qrReader.querySelector('.scan-line').remove();
+    }
+    if (id === 'start-form') fillJobInfo('start-job-info');
+    if (id === 'stop-form') {
+      fillJobInfo('stop-job-info');
+      updateStopFormFields();
+    }
+  }
+
+  function fillJobInfo(containerId) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = `
+      <p><strong>Project Number:</strong> <input readonly value="${qrData.projectNo||''}"></p>
+      <p><strong>Customer Name:</strong> <input readonly value="${qrData.customerName||''}"></p>
+      <p><strong>Part Name:</strong> <input readonly value="${qrData.partName||''}"></p>
+      <p><strong>Drawing Number:</strong> <input readonly value="${qrData.drawingNo||''}"></p>
+      <p><strong>Quantity Ordered:</strong> <input readonly value="${qrData.quantityOrdered||''}"></p>
+    `;
+  }
+
+  function fillInfoScreen() {
+    document.getElementById('job-info').innerHTML = `
+      <p><strong>Project Number:</strong> ${qrData.projectNo||''}</p>
+      <p><strong>Customer Name:</strong> ${qrData.customerName||''}</p>
+      <p><strong>Part Name:</strong> ${qrData.partName||''}</p>
+      <p><strong>Drawing Number:</strong> ${qrData.drawingNo||''}</p>
+      <p><strong>Quantity Ordered:</strong> ${qrData.quantityOrdered||''}</p>
+      <div id="open-jobs-table"></div>
+    `;
+    // Always fetch fresh data from backend when showing job info screen
+    showCurrentOpenJobs();
+  }
+
+  function resetAll() {
+    qrData = {};
+    document.getElementById('start-form').reset();
+    document.getElementById('stop-form').reset();
+    showScreen('scan-screen');
+    if (window.qrScanner) {
+      window.qrScanner.stop().catch(()=>{});
+      window.qrScanner = null;
+    }
+  }
+
+  function startScan() {
+    scanHandled = false;
+    const qrReader = document.getElementById('qr-reader');
+    qrReader.style.display = '';
+    qrReader.style.border = '';
+    qrReader.classList.add('active');
+    if (!qrReader.querySelector('.scan-line')) {
+      const scanLine = document.createElement('div');
+      scanLine.className = 'scan-line';
+      qrReader.appendChild(scanLine);
+    }
+    if (window.qrScanner) {
+      window.qrScanner.stop().catch(()=>{});
+      window.qrScanner = null;
+    }
+    window.qrScanner = new Html5Qrcode("qr-reader");
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        window.qrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 320, height: 320 } },
+          qr => {
+            if (scanHandled) return;
+            try {
+              qrData = JSON.parse(qr);
+              qrReader.style.border = '4px solid #0f0';
+              scanHandled = true;
+              setTimeout(() => {
+                fillInfoScreen();
+                showScreen('info-screen');
+              }, 150);
+              window.qrScanner.stop();
+              window.qrScanner = null;
+            } catch {
+              qrReader.style.border = '4px solid #e00';
+              setTimeout(() => {
+                qrReader.style.border = '';
+              }, 500);
+              alert("QR format ผิดพลาด กรุณาลองใหม่");
+            }
+          }
+        ).catch(err => {
+          alert("ไม่สามารถเริ่มกล้องได้: " + err);
+        });
+      } else {
+        alert("ไม่พบกล้อง");
+      }
+    }).catch(err => {
+      alert("ไม่สามารถเข้าถึงกล้องได้: " + err);
+    });
+  }
+
+  // Show modal to select open job to pause
+  function fetchOpenJobsAndShowPauseSelector() {
+  showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+  const params = new URLSearchParams({
+    mode: 'openJobs',
+    projectNo: qrData.projectNo,
+    partName: qrData.partName
+  });
+  fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+    .then(res => res.json())
+    .then(openJobs => {
+      hideOpenJobsLoading();
+        // Only show jobs with status OPEN
+        const openOnly = openJobs.filter(job => job.status === 'OPEN');
+        showPauseJobsTableSelector(openOnly);
+    })
+    .catch(() => {
+      hideOpenJobsLoading();
+      alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+    });
+}
+
+function showOpenJobsLoading() {
+  closeOpenJobsSelector(); // Remove any previous modal/overlay
+  let overlay = document.createElement('div');
+  overlay.id = 'open-jobs-overlay';
+  overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+  document.body.appendChild(overlay);
+  let loader = document.createElement('div');
+  loader.id = 'open-jobs-loading';
+  loader.style = 'position:fixed; left:0; right:0; top:40vh; margin:0 auto; z-index:1000; display:flex; flex-direction:column; align-items:center;';
+  loader.innerHTML = `<div class="loader-spinner" style="width:56px; height:56px; border-width:7px;"></div><div style="margin-top:18px; color:#fff; font-size:1.2rem;">กำลังโหลดข้อมูล...</div>`;
+  document.body.appendChild(loader);
+}
+
+function hideOpenJobsLoading() {
+  let loader = document.getElementById('open-jobs-loading');
+  if (loader) loader.remove();
+  let overlay = document.getElementById('open-jobs-overlay');
+  if (overlay) overlay.remove();
+}
+
+  function showOpenJobsTableSelector(openJobs, mode = 'stop') {
+  // Sort by processName, then processNo (numeric), then stepNo (numeric)
+  openJobs.sort((a, b) => {
+    if (a.processName < b.processName) return -1;
+    if (a.processName > b.processName) return 1;
+    const aProcNo = parseInt(a.processNo, 10);
+    const bProcNo = parseInt(b.processNo, 10);
+    if (aProcNo !== bProcNo) return aProcNo - bProcNo;
+    const aStepNo = parseInt(a.stepNo, 10);
+    const bStepNo = parseInt(b.stepNo, 10);
+    return aStepNo - bStepNo;
+  });
+  // Remove any existing selector or overlay
+  let selectorDiv = document.getElementById('open-jobs-selector');
+  if (selectorDiv) selectorDiv.remove();
+  let overlay = document.getElementById('open-jobs-overlay');
+  if (overlay) overlay.remove();
+
+  // Add semi-transparent overlay
+  overlay = document.createElement('div');
+  overlay.id = 'open-jobs-overlay';
+  overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+  document.body.appendChild(overlay);
+
+  selectorDiv = document.createElement('div');
+  selectorDiv.id = 'open-jobs-selector';
+  selectorDiv.style = 'background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 2px 24px #0005; max-width: 500px; margin: 30px auto; position: fixed; left: 0; right: 0; top: 10vh; z-index: 1000;';
+
+    let headerText = mode === 'pause' ? 'เลือกงานที่ต้องการจะหยุดชั่วคราว' : 'เลือกงานที่ต้องการจะปิด';
+    let html = `<h2 style="text-align:center;">${headerText}</h2>`;
+  if (openJobs.length === 0) {
+    html += `<div style="text-align:center; padding: 32px 0;">
+      <div style="font-size:1.3rem; color:#b71c1c; margin-bottom:24px;">ไม่พบข้อมูลการเริ่มของงานนี้</div>
+      <button onclick="closeOpenJobsSelector(); showScreen('info-screen');" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+    </div>`;
+  } else {
+    html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+      <thead>
+        <tr>
+          <th>Process Name</th>
+          <th>Process No.</th>
+          <th>Step No.</th>
+          <th>Machine No.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>`;
+    openJobs.forEach((job, idx) => {
+      html += `<tr>
+        <td style="text-align:center;">${job.processName}</td>
+        <td style="text-align:center;">${job.processNo}</td>
+        <td style="text-align:center;">${job.stepNo}</td>
+        <td style="text-align:center;">${job.machineNo || ''}</td>
+        <td><button onclick="selectOpenJob(${idx})" style="padding:6px 18px; border-radius:8px; background:#1976d2; color:#fff; border:none; cursor:pointer;">เลือก</button></td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    html += `<div style="text-align:center; margin-top:18px;"><button onclick="closeOpenJobsSelector()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button></div>`;
+  }
+  selectorDiv.innerHTML = html;
+  document.body.appendChild(selectorDiv);
+
+  // Store jobs globally for selection
+  window._openJobs = openJobs;
+}
+
+function selectOpenJob(idx) {
+  const job = window._openJobs[idx];
+  // Prefill STOP form fields
+  document.querySelector('#stop-form [name="processName"]').value = job.processName;
+  document.querySelector('#stop-form [name="processNo"]').value = job.processNo;
+  document.querySelector('#stop-form [name="stepNo"]').value = job.stepNo;
+  if (job.machineNo) {
+    document.querySelector('#stop-form [name="machineNo"]').value = job.machineNo;
+  }
+  closeOpenJobsSelector();
+  showScreen('stop-form');
+    // Removed showPauseContinueButtons as it is not defined and not needed
+}
+
+function closeOpenJobsSelector() {
+  let selectorDiv = document.getElementById('open-jobs-selector');
+  if (selectorDiv) selectorDiv.remove();
+  let overlay = document.getElementById('open-jobs-overlay');
+  if (overlay) overlay.remove();
+  let loader = document.getElementById('open-jobs-loading');
+  if (loader) loader.remove();
+}
+
+  function showPauseJobsTableSelector(openJobs) {
+    // Sort by processName, then processNo (numeric), then stepNo (numeric)
+    openJobs.sort((a, b) => {
+      if (a.processName < b.processName) return -1;
+      if (a.processName > b.processName) return 1;
+      const aProcNo = parseInt(a.processNo, 10);
+      const bProcNo = parseInt(b.processNo, 10);
+      if (aProcNo !== bProcNo) return aProcNo - bProcNo;
+      const aStepNo = parseInt(a.stepNo, 10);
+      const bStepNo = parseInt(b.stepNo, 10);
+      return aStepNo - bStepNo;
+    });
+    // Remove any existing selector or overlay
+    let selectorDiv = document.getElementById('pause-jobs-selector');
+    if (selectorDiv) selectorDiv.remove();
+    let overlay = document.getElementById('open-jobs-overlay');
+    if (overlay) overlay.remove();
+
+    // Add semi-transparent overlay
+    overlay = document.createElement('div');
+    overlay.id = 'open-jobs-overlay';
+    overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+    document.body.appendChild(overlay);
+
+    selectorDiv = document.createElement('div');
+    selectorDiv.id = 'pause-jobs-selector';
+    selectorDiv.style = 'background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 2px 24px #0005; max-width: 500px; margin: 30px auto; position: fixed; left: 0; right: 0; top: 10vh; z-index: 1000;';
+
+    let html = `<h2 style="text-align:center;">เลือกงานที่ต้องการจะหยุดชั่วคราว</h2>`;
+    if (openJobs.length === 0) {
+      html += `<div style="text-align:center; padding: 32px 0;">
+        <div style="font-size:1.3rem; color:#b71c1c; margin-bottom:24px;">ไม่พบข้อมูลการเริ่มของงานนี้</div>
+        <button onclick="closePauseJobsSelector(); showScreen('info-screen');" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+      </div>`;
+    } else {
+      html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+        <thead>
+          <tr>
+            <th>Process Name</th>
+            <th>Process No.</th>
+            <th>Step No.</th>
+            <th>Machine No.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>`;
+      openJobs.forEach((job, idx) => {
+        html += `<tr>
+          <td style="text-align:center;">${job.processName}</td>
+          <td style="text-align:center;">${job.processNo}</td>
+          <td style="text-align:center;">${job.stepNo}</td>
+          <td style="text-align:center;">${job.machineNo || ''}</td>
+          <td><button onclick="pauseSelectedJob(${idx})" style="padding:6px 18px; border-radius:8px; background:#FFF59D; color:#222; border:none; cursor:pointer;">หยุดชั่วคราว/DownTime</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      html += `<div style="text-align:center; margin-top:18px;"><button onclick="closePauseJobsSelector()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button></div>`;
+    }
+    selectorDiv.innerHTML = html;
+    document.body.appendChild(selectorDiv);
+
+    // Store jobs globally for selection
+    window._pauseJobs = openJobs;
+  }
+
+  function pauseSelectedJob(idx) {
+    const job = window._pauseJobs[idx];
+    if (!job) return;
+    closePauseJobsSelector(); // Close the job selection modal before showing the reason modal
+    showPauseReasonModal(job);
+  }
+
+  function showPauseReasonModal(job) {
+    const modal = document.getElementById('pause-reason-modal');
+    const form = document.getElementById('pause-reason-form');
+    modal.style.display = 'flex';
+    // Reset form
+    form.reset();
+    document.getElementById('pause-reason-text').style.display = 'none';
+    document.getElementById('pause-other-reason').style.display = 'none'; // Hide other reason for pause
+    document.getElementById('downtime-reason-select').style.display = 'none';
+    document.getElementById('downtime-other-reason').style.display = 'none';
+
+    // Handle radio change
+    form.pauseType.forEach(radio => {
+      radio.onclick = function() {
+        if (this.value === 'PAUSE') {
+          document.getElementById('pause-reason-text').style.display = '';
+          document.getElementById('pause-reason-text').querySelector('select').required = true;
+          document.getElementById('pause-other-reason').style.display = 'none';
+          document.getElementById('pause-other-reason').querySelector('input').required = false;
+          document.getElementById('downtime-reason-select').style.display = 'none';
+          document.getElementById('downtime-reason-select').querySelector('select').required = false;
+          document.getElementById('downtime-other-reason').style.display = 'none';
+          document.getElementById('downtime-other-reason').querySelector('input').required = false; // Always remove required when switching to PAUSE
+        } else {
+          document.getElementById('pause-reason-text').style.display = 'none';
+          document.getElementById('pause-reason-text').querySelector('select').required = false;
+          document.getElementById('pause-other-reason').style.display = 'none';
+          document.getElementById('pause-other-reason').querySelector('input').required = false;
+          document.getElementById('downtime-reason-select').style.display = '';
+          document.getElementById('downtime-reason-select').querySelector('select').required = true;
+          // Do not set downtimeOtherReason required here; handled in select change
+        }
+      };
+    });
+
+    // Handle pause reason select
+    form.pauseReasonSelect && form.pauseReasonSelect.addEventListener('change', function() {
+      if (this.value === 'other') {
+        document.getElementById('pause-other-reason').style.display = '';
+        document.getElementById('pause-other-reason').querySelector('input').required = true;
+      } else {
+        document.getElementById('pause-other-reason').style.display = 'none';
+        document.getElementById('pause-other-reason').querySelector('input').required = false;
+      }
+    });
+
+    // Handle downtime reason select
+    form.downtimeReason && form.downtimeReason.addEventListener('change', function() {
+      if (this.value === 'other') {
+        document.getElementById('downtime-other-reason').style.display = '';
+        document.getElementById('downtime-other-reason').querySelector('input').required = true;
+      } else {
+        document.getElementById('downtime-other-reason').style.display = 'none';
+        document.getElementById('downtime-other-reason').querySelector('input').required = false;
+      }
+    });
+
+    // Submit handler
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      // Defensive: only require pauseOtherReason if visible and relevant
+      document.getElementById('pause-other-reason').querySelector('input').required =
+        (form.pauseType.value === 'PAUSE' && form.pauseReasonSelect && form.pauseReasonSelect.value === 'other');
+      // Defensive: only require downtimeOtherReason if visible and relevant
+      document.getElementById('downtime-other-reason').querySelector('input').required =
+        (form.pauseType.value === 'DOWNTIME' && form.downtimeReason && form.downtimeReason.value === 'other');
+
+      let pauseType = form.pauseType.value;
+      let reason = '';
+      if (pauseType === 'PAUSE') {
+        let pauseReason = form.pauseReasonSelect.value;
+        if (!pauseReason) { alert('กรุณาเลือกเหตุผลหยุดชั่วคราว'); return; }
+        if (pauseReason === 'other') {
+          let other = form.pauseOtherReason.value.trim();
+          if (!other) { alert('กรุณาระบุเหตุผลอื่น ๆ'); return; }
+          reason = 'Other: ' + other;
+        } else {
+          reason = pauseReason;
+        }
+      } else {
+        let dtReason = form.downtimeReason.value;
+        if (!dtReason) { alert('กรุณาเลือกเหตุผล'); return; }
+        if (dtReason === 'other') {
+          let other = form.downtimeOtherReason.value.trim();
+          if (!other) { alert('กรุณาระบุเหตุผลอื่น ๆ'); return; }
+          reason = 'Other: ' + other;
+        } else {
+          reason = dtReason;
+        }
+      }
+      // Optimistic update for pause
+      optimisticUpdateOpenJobs({type: 'update', job: {
+        processName: job.processName,
+        processNo: job.processNo,
+        stepNo: job.stepNo,
+        machineNo: job.machineNo,
+        status: pauseType
+      }});
+      closePauseReasonModal();
+      showScreen('loading-screen');
+      const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+      fetch(GAS_ENDPOINT, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          ...qrData,
+          processName: job.processName,
+          processNo: job.processNo,
+          stepNo: job.stepNo,
+          machineNo: job.machineNo,
+          status: 'PAUSE',
+          pauseType: pauseType,
+          pauseReason: reason
+        })
+      })
+      .then(response => response.text())
+      .then(text => {
+        if (text.trim().startsWith("ERROR:")) {
+          alert(text.trim().replace("ERROR: ", ""));
+          showCurrentOpenJobs();
+          showScreen('info-screen');
+        } else {
+          alert('งานถูกหยุดชั่วคราวแล้ว');
+          showCurrentOpenJobs();
+          showScreen('info-screen');
+        }
+      })
+      .catch((error) => {
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+        showCurrentOpenJobs();
+        showScreen('info-screen');
+      });
+    };
+  }
+  function closePauseReasonModal() {
+    document.getElementById('pause-reason-modal').style.display = 'none';
+  }
+
+  function closePauseJobsSelector() {
+    let selectorDiv = document.getElementById('pause-jobs-selector');
+    if (selectorDiv) selectorDiv.remove();
+    let overlay = document.getElementById('open-jobs-overlay');
+    if (overlay) overlay.remove();
+    let loader = document.getElementById('open-jobs-loading');
+    if (loader) loader.remove();
+  }
+
+  function updateStopFormFields() {
+    const stopForm = document.getElementById('stop-form');
+    if (!stopForm) return;
+    const processNameSelect = stopForm.querySelector('[name="processName"]');
+    const fgInput = stopForm.querySelector('[name="fg"]');
+    const ngInput = stopForm.querySelector('[name="ng"]');
+    const reworkInput = stopForm.querySelector('[name="rework"]');
+    const fgRow = document.getElementById('fg-row');
+    const ngRow = document.getElementById('ng-row');
+    const reworkRow = document.getElementById('rework-row');
+    if (!processNameSelect || !fgInput || !ngInput || !reworkInput || !fgRow || !ngRow || !reworkRow) return;
+    function updateFields() {
+      const selected = processNameSelect.value.replace(/\s+/g, ' ').trim().toLowerCase();
+      if (selected === 'machine setting') {
+        fgInput.required = false;
+        ngInput.required = false;
+        reworkInput.required = false;
+        fgRow.style.display = 'none';
+        ngRow.style.display = 'none';
+        reworkRow.style.display = 'none';
+      } else {
+        fgInput.required = true;
+        ngInput.required = true;
+        reworkInput.required = true;
+        fgRow.style.display = '';
+        ngRow.style.display = '';
+        reworkRow.style.display = '';
+      }
+    }
+    processNameSelect.removeEventListener('change', updateFields);
+    processNameSelect.addEventListener('change', updateFields);
+    updateFields();
+  }
+
+  document.addEventListener('DOMContentLoaded', updateStopFormFields);
+
+  // On load, show scan screen
+  showScreen('scan-screen');
+
+  // Show modal to select paused job to continue
+  function fetchPausedJobsAndShowContinueSelector() {
+    showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(jobs => {
+        hideOpenJobsLoading();
+        // Only show jobs with status PAUSE (requires backend to return status, otherwise filter by frontend if possible)
+        // For now, assume all jobs are OPEN, but if you add status to the backend response, use it here
+        // We'll filter by jobs that are likely paused (if status is present)
+        const pausedJobs = jobs.filter(job => job.status === 'PAUSE' || (job.status === undefined && job.isPaused));
+        showContinueJobsTableSelector(pausedJobs);
+      })
+      .catch(() => {
+        hideOpenJobsLoading();
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      });
+  }
+
+  function showContinueJobsTableSelector(pausedJobs) {
+    // Sort by processName, then processNo (numeric), then stepNo (numeric)
+    pausedJobs.sort((a, b) => {
+      if (a.processName < b.processName) return -1;
+      if (a.processName > b.processName) return 1;
+      const aProcNo = parseInt(a.processNo, 10);
+      const bProcNo = parseInt(b.processNo, 10);
+      if (aProcNo !== bProcNo) return aProcNo - bProcNo;
+      const aStepNo = parseInt(a.stepNo, 10);
+      const bStepNo = parseInt(b.stepNo, 10);
+      return aStepNo - bStepNo;
+    });
+    // Remove any existing selector or overlay
+    let selectorDiv = document.getElementById('continue-jobs-selector');
+    if (selectorDiv) selectorDiv.remove();
+    let overlay = document.getElementById('open-jobs-overlay');
+    if (overlay) overlay.remove();
+
+    // Add semi-transparent overlay
+    overlay = document.createElement('div');
+    overlay.id = 'open-jobs-overlay';
+    overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+    document.body.appendChild(overlay);
+
+    selectorDiv = document.createElement('div');
+    selectorDiv.id = 'continue-jobs-selector';
+    selectorDiv.style = 'background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 2px 24px #0005; max-width: 500px; margin: 30px auto; position: fixed; left: 0; right: 0; top: 10vh; z-index: 1000;';
+
+    let html = `<h2 style="text-align:center;">เลือกงานที่ต้องการจะดำเนินการต่อ</h2>`;
+    if (pausedJobs.length === 0) {
+      html += `<div style="text-align:center; padding: 32px 0;">
+        <div style="font-size:1.3rem; color:#b71c1c; margin-bottom:24px;">ไม่พบงานที่หยุดชั่วคราว</div>
+        <button onclick="closeContinueJobsSelector(); showScreen('info-screen');" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+      </div>`;
+    } else {
+      html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+        <thead>
+          <tr>
+            <th>Process Name</th>
+            <th>Process No.</th>
+            <th>Step No.</th>
+            <th>Machine No.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>`;
+      pausedJobs.forEach((job, idx) => {
+        html += `<tr>
+          <td style="text-align:center;">${job.processName}</td>
+          <td style="text-align:center;">${job.processNo}</td>
+          <td style="text-align:center;">${job.stepNo}</td>
+          <td style="text-align:center;">${job.machineNo || ''}</td>
+          <td><button onclick="continueSelectedJob(${idx})" style="padding:6px 18px; border-radius:8px; background:#90caf9; color:#222; border:none; cursor:pointer;">ดำเนินการต่อ</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      html += `<div style="text-align:center; margin-top:18px;"><button onclick="closeContinueJobsSelector()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button></div>`;
+    }
+    selectorDiv.innerHTML = html;
+    document.body.appendChild(selectorDiv);
+
+    // Store jobs globally for selection
+    window._continueJobs = pausedJobs;
+  }
+
+  window.continueSelectedJob = function(idx) {
+    const job = window._continueJobs[idx];
+    if (!job) return;
+    if (!confirm('คุณต้องการดำเนินงานนี้ต่อใช่หรือไม่?')) return;
+    closeContinueJobsSelector();
+    showScreen('loading-screen');
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        ...qrData,
+        processName: job.processName,
+        processNo: job.processNo,
+        stepNo: job.stepNo,
+        machineNo: job.machineNo,
+        status: 'OPEN',
+        action: 'CONTINUE'
+      })
+    })
+    .then(response => response.text())
+    .then(text => {
+      showCurrentOpenJobs();
+      if (text.trim().startsWith("ERROR:")) {
+        alert(text.trim().replace("ERROR: ", ""));
+        showScreen('info-screen');
+      } else {
+        alert('งานถูกดำเนินการต่อแล้ว');
+        showScreen('info-screen');
+      }
+    })
+    .catch((error) => {
+      showCurrentOpenJobs();
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+      showScreen('info-screen');
+    });
+  }
+
+  function closeContinueJobsSelector() {
+    let selectorDiv = document.getElementById('continue-jobs-selector');
+    if (selectorDiv) selectorDiv.remove();
+    let overlay = document.getElementById('open-jobs-overlay');
+    if (overlay) overlay.remove();
+    let loader = document.getElementById('open-jobs-loading');
+    if (loader) loader.remove();
+  }
+
+  // Fetch open jobs and show the stop selector modal
+  function fetchOpenJobsAndShowStopSelector() {
+    showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(openJobs => {
+        hideOpenJobsLoading();
+        showOpenJobsTableSelector(openJobs, 'stop');
+      })
+      .catch(() => {
+        hideOpenJobsLoading();
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      });
+  }
+
+  // Submit handler for start form
+  function submitStart(event) {
+    event.preventDefault();
+    if (window.isSubmitting) return;
+    window.isSubmitting = true;
+    showScreen('loading-screen');
+    const form = document.getElementById('start-form');
+    const formData = new FormData(form);
+    const data = {
+      ...qrData,
+      processName: formData.get('processName'),
+      processNo: formData.get('processNo'),
+      stepNo: formData.get('stepNo'),
+      machineNo: formData.get('machineNo'),
+      employeeCode: formData.get('employeeCode'),
+      status: 'OPEN'
+    };
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(text => {
+      window.isSubmitting = false;
+      if (text.trim().startsWith("ERROR:")) {
+        alert(text.trim().replace("ERROR: ", ""));
+        showScreen('info-screen');
+      } else {
+        showScreen('confirm-screen');
+      }
+    })
+    .catch((error) => {
+      window.isSubmitting = false;
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+      showScreen('info-screen');
+    });
+  }
+
+  // Submit handler for stop form
+  function submitStop(event) {
+    event.preventDefault();
+    if (window.isSubmitting) return;
+    window.isSubmitting = true;
+    showScreen('loading-screen');
+    const form = document.getElementById('stop-form');
+    const formData = new FormData(form);
+    const data = {
+      ...qrData,
+      processName: formData.get('processName'),
+      processNo: formData.get('processNo'),
+      stepNo: formData.get('stepNo'),
+      machineNo: formData.get('machineNo'),
+      employeeCode: formData.get('employeeCode'),
+      fg: formData.get('fg'),
+      ng: formData.get('ng'),
+      rework: formData.get('rework'),
+      status: 'CLOSE'
+    };
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(text => {
+      window.isSubmitting = false;
+      if (text.trim().startsWith("ERROR:")) {
+        alert(text.trim().replace("ERROR: ", ""));
+        showScreen('info-screen');
+      } else {
+        showScreen('confirm-screen');
+      }
+    })
+    .catch((error) => {
+      window.isSubmitting = false;
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+      showScreen('info-screen');
+    });
+  }
+
+  // --- Machine Setting Button Logic ---
+  document.getElementById('machine-setting-btn').onclick = function() {
+    document.getElementById('machine-setting-modal').style.display = 'flex';
+  };
+  function closeMachineSettingModal() {
+    document.getElementById('machine-setting-modal').style.display = 'none';
+  }
+  document.getElementById('machine-setting-start-btn').onclick = function() {
+    closeMachineSettingModal();
+    // Prefill and show start form
+    showScreen('start-form');
+    const form = document.getElementById('start-form');
+    if (form) {
+      form.processName.value = 'Machine Setting';
+      // Optionally, trigger change event if logic depends on it
+      if (typeof form.processName.onchange === 'function') form.processName.onchange();
+    }
+  };
+  document.getElementById('machine-setting-stop-btn').onclick = function() {
+    closeMachineSettingModal();
+    // Fetch open jobs and show stop selector, but only for Machine Setting jobs
+    showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(openJobs => {
+        hideOpenJobsLoading();
+        // Only show jobs with processName 'Machine Setting'
+        const msJobs = openJobs.filter(job => job.processName && job.processName.trim().toLowerCase() === 'machine setting' && job.status === 'OPEN');
+        showOpenJobsTableSelector(msJobs, 'stop');
+      })
+      .catch(() => {
+        hideOpenJobsLoading();
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      });
+  };
+
+  // --- OT Button Logic ---
+  document.getElementById('ot-btn').onclick = function() {
+    const now = new Date();
+    if (now.getHours() < 17) {
+      alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:00 น.');
+      return;
+    }
+    document.getElementById('ot-modal').style.display = 'flex';
+  };
+  function closeOTModal() {
+    document.getElementById('ot-modal').style.display = 'none';
+  }
+  document.getElementById('ot-start-btn').onclick = function() {
+    closeOTModal();
+    // Fetch open jobs and show selector for OT start
+    showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(openJobs => {
+        hideOpenJobsLoading();
+        // Only show jobs with status OPEN
+        const openOnly = openJobs.filter(job => job.status === 'OPEN');
+        showOpenJobsTableSelector(openOnly, 'start-ot');
+      })
+      .catch(() => {
+        hideOpenJobsLoading();
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      });
+  };
+
+  // Extend showOpenJobsTableSelector to handle OT start
+  const originalShowOpenJobsTableSelector = window.showOpenJobsTableSelector;
+  window.showOpenJobsTableSelector = function(openJobs, mode = 'stop') {
+    if (mode === 'start-ot') {
+      // Sort and show jobs for OT start
+      openJobs.sort((a, b) => {
+        if (a.processName < b.processName) return -1;
+        if (a.processName > b.processName) return 1;
+        const aProcNo = parseInt(a.processNo, 10);
+        const bProcNo = parseInt(b.processNo, 10);
+        if (aProcNo !== bProcNo) return aProcNo - bProcNo;
+        const aStepNo = parseInt(a.stepNo, 10);
+        const bStepNo = parseInt(b.stepNo, 10);
+        return aStepNo - bStepNo;
+      });
+      // Remove any existing selector or overlay
+      let selectorDiv = document.getElementById('open-jobs-selector');
+      if (selectorDiv) selectorDiv.remove();
+      let overlay = document.getElementById('open-jobs-overlay');
+      if (overlay) overlay.remove();
+      // Add semi-transparent overlay
+      overlay = document.createElement('div');
+      overlay.id = 'open-jobs-overlay';
+      overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+      document.body.appendChild(overlay);
+      selectorDiv = document.createElement('div');
+      selectorDiv.id = 'open-jobs-selector';
+      selectorDiv.style = 'background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 2px 24px #0005; max-width: 500px; margin: 30px auto; position: fixed; left: 0; right: 0; top: 10vh; z-index: 1000;';
+      let html = `<h2 style="text-align:center;">เลือกงานที่ต้องการจะเริ่ม OT</h2>`;
+      if (openJobs.length === 0) {
+        html += `<div style="text-align:center; padding: 32px 0;">
+          <div style="font-size:1.3rem; color:#b71c1c; margin-bottom:24px;">ไม่พบงานที่เปิดอยู่</div>
+          <button onclick="closeOpenJobsSelector(); showScreen('info-screen');" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+        </div>`;
+      } else {
+        html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+          <thead>
+            <tr>
+              <th>Process Name</th>
+              <th>Process No.</th>
+              <th>Step No.</th>
+              <th>Machine No.</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>`;
+        openJobs.forEach((job, idx) => {
+          html += `<tr>
+            <td style="text-align:center;">${job.processName}</td>
+            <td style="text-align:center;">${job.processNo}</td>
+            <td style="text-align:center;">${job.stepNo}</td>
+            <td style="text-align:center;">${job.machineNo || ''}</td>
+            <td><button onclick="startOTForJob(${idx})" style="padding:6px 18px; border-radius:8px; background:#1976d2; color:#fff; border:none; cursor:pointer;">เลือก</button></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        html += `<div style="text-align:center; margin-top:18px;"><button onclick="closeOpenJobsSelector()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button></div>`;
+      }
+      selectorDiv.innerHTML = html;
+      document.body.appendChild(selectorDiv);
+      window._openJobs = openJobs;
+      return;
+    }
+    // Fallback to original for other modes
+    originalShowOpenJobsTableSelector(openJobs, mode);
+  };
+
+  window.startOTForJob = function(idx) {
+    const job = window._openJobs[idx];
+    if (!job) return;
+    const now = new Date();
+    if (now.getHours() < 17) {
+      alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:00 น.');
+      return;
+    }
+    if (!confirm('คุณต้องการเริ่ม OT ใช่หรือไม่?')) return;
+    closeOpenJobsSelector();
+    showScreen('loading-screen');
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        ...qrData,
+        processName: job.processName,
+        processNo: job.processNo,
+        stepNo: job.stepNo,
+        machineNo: job.machineNo,
+        action: 'START_OT'
+      })
+    })
+    .then(response => response.text())
+    .then(text => {
+      showCurrentOpenJobs();
+      if (text.trim().startsWith("ERROR:")) {
+        alert(text.trim().replace("ERROR: ", ""));
+        showScreen('info-screen');
+      } else {
+        alert('เริ่ม OT สำเร็จ');
+        showScreen('info-screen');
+      }
+    })
+    .catch((error) => {
+      showCurrentOpenJobs();
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+      showScreen('info-screen');
+    });
+  };
+
+  document.getElementById('ot-stop-btn').onclick = function() {
+    closeOTModal();
+    // Fetch open jobs and show stop selector, but only for OT jobs
+    showOpenJobsLoading();
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(openJobs => {
+        hideOpenJobsLoading();
+        // Only show jobs with status 'OT'
+        const otJobs = openJobs.filter(job => job.status === 'OT');
+        showOpenJobsTableSelector(otJobs, 'stop-ot');
+      })
+      .catch(() => {
+        hideOpenJobsLoading();
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      });
+  };
+
+  // Extend showOpenJobsTableSelector for stop-ot mode
+  const originalShowOpenJobsTableSelector2 = window.showOpenJobsTableSelector;
+  window.showOpenJobsTableSelector = function(openJobs, mode = 'stop') {
+    if (mode === 'stop-ot') {
+      // Sort and show jobs for OT stop
+      openJobs.sort((a, b) => {
+        if (a.processName < b.processName) return -1;
+        if (a.processName > b.processName) return 1;
+        const aProcNo = parseInt(a.processNo, 10);
+        const bProcNo = parseInt(b.processNo, 10);
+        if (aProcNo !== bProcNo) return aProcNo - bProcNo;
+        const aStepNo = parseInt(a.stepNo, 10);
+        const bStepNo = parseInt(b.stepNo, 10);
+        return aStepNo - bStepNo;
+      });
+      // Remove any existing selector or overlay
+      let selectorDiv = document.getElementById('open-jobs-selector');
+      if (selectorDiv) selectorDiv.remove();
+      let overlay = document.getElementById('open-jobs-overlay');
+      if (overlay) overlay.remove();
+      // Add semi-transparent overlay
+      overlay = document.createElement('div');
+      overlay.id = 'open-jobs-overlay';
+      overlay.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:999;';
+      document.body.appendChild(overlay);
+      selectorDiv = document.createElement('div');
+      selectorDiv.id = 'open-jobs-selector';
+      selectorDiv.style = 'background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 2px 24px #0005; max-width: 500px; margin: 30px auto; position: fixed; left: 0; right: 0; top: 10vh; z-index: 1000;';
+      let html = `<h2 style="text-align:center;">เลือกงานที่ต้องการจะหยุด OT</h2>`;
+      if (openJobs.length === 0) {
+        html += `<div style="text-align:center; padding: 32px 0;">
+          <div style="font-size:1.3rem; color:#b71c1c; margin-bottom:24px;">ไม่พบงานที่หยุด OT</div>
+          <button onclick="closeOpenJobsSelector(); showScreen('info-screen');" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+        </div>`;
+      } else {
+        html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+          <thead>
+            <tr>
+              <th>Process Name</th>
+              <th>Process No.</th>
+              <th>Step No.</th>
+              <th>Machine No.</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>`;
+        openJobs.forEach((job, idx) => {
+          html += `<tr>
+            <td style="text-align:center;">${job.processName}</td>
+            <td style="text-align:center;">${job.processNo}</td>
+            <td style="text-align:center;">${job.stepNo}</td>
+            <td style="text-align:center;">${job.machineNo || ''}</td>
+            <td><button onclick="stopOTForJob(${idx})" style="padding:6px 18px; border-radius:8px; background:#b71c1c; color:#fff; border:none; cursor:pointer;">หยุด OT</button></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        html += `<div style="text-align:center; margin-top:18px;"><button onclick="closeOpenJobsSelector()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button></div>`;
+      }
+      selectorDiv.innerHTML = html;
+      document.body.appendChild(selectorDiv);
+      window._openJobs = openJobs;
+      return;
+    }
+    // Fallback to original for other modes
+    originalShowOpenJobsTableSelector2(openJobs, mode);
+  };
+
+  window.stopOTForJob = function(idx) {
+    const job = window._openJobs[idx];
+    if (!job) return;
+    if (!confirm('คุณต้องการหยุด OT ใช่หรือไม่?')) return;
+    closeOpenJobsSelector();
+    showScreen('loading-screen');
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        ...qrData,
+        processName: job.processName,
+        processNo: job.processNo,
+        stepNo: job.stepNo,
+        machineNo: job.machineNo,
+        action: 'STOP_OT'
+      })
+    })
+    .then(response => response.text())
+    .then(text => {
+      showCurrentOpenJobs();
+      if (text.trim().startsWith("ERROR:")) {
+        alert(text.trim().replace("ERROR: ", ""));
+        showScreen('info-screen');
+      } else {
+        alert('งานถูกหยุด OT แล้ว');
+        showScreen('info-screen');
+      }
+    })
+    .catch((error) => {
+      showCurrentOpenJobs();
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+      showScreen('info-screen');
+    });
+  };
+
+  function showCurrentOpenJobs(optimisticJobs) {
+    const container = document.getElementById('open-jobs-table');
+    if (!container) return; // Prevent error if element is not in DOM
+    if (!qrData.projectNo || !qrData.partName) {
+      container.innerHTML = '';
+      return;
+    }
+
+    // If we have optimistic jobs, render them immediately
+    if (optimisticJobs) {
+      renderOpenJobsTable(optimisticJobs, container);
+      return; // Don't fetch from backend when showing optimistic update
+    }
+
+    // Show loading spinner only when fetching from backend
+    container.innerHTML = '<div style="margin-top:10px; text-align:center;"><span class="loader-spinner" style="width:32px; height:32px; border-width:4px; display:inline-block; vertical-align:middle;"></span> <span style="font-size:1.1em; color:#888;">กำลังโหลด...</span></div>';
+
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+    const params = new URLSearchParams({
+      mode: 'openJobs',
+      projectNo: qrData.projectNo,
+      partName: qrData.partName
+    });
+    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+      .then(res => res.json())
+      .then(openJobs => {
+        window._lastOpenJobs = openJobs; // Store the latest jobs globally
+        renderOpenJobsTable(openJobs, container);
+      })
+      .catch(() => {
+        container.innerHTML = '<div style="margin-top:10px; color:#b71c1c;">เกิดข้อผิดพลาดในการโหลดงานที่เปิดอยู่</div>';
+      });
+  }
+
+  function optimisticUpdateOpenJobs(expectedChange) {
+    // Only update if the open jobs table is visible
+    const container = document.getElementById('open-jobs-table');
+    if (!container || container.offsetParent === null) return;
+    let optimisticJobs = window._lastOpenJobs ? [...window._lastOpenJobs] : [];
+    
+    console.log('Current jobs before update:', optimisticJobs);
+    console.log('Expected change:', expectedChange);
+
+    // Apply the expected change
+    if (expectedChange && expectedChange.type && expectedChange.job) {
+      if (expectedChange.type === 'add') {
+        optimisticJobs.push(expectedChange.job);
+      } else if (expectedChange.type === 'remove') {
+        optimisticJobs = optimisticJobs.filter(j =>
+          !(j.processName === expectedChange.job.processName &&
+            j.processNo === expectedChange.job.processNo &&
+            j.stepNo === expectedChange.job.stepNo &&
+            j.machineNo === expectedChange.job.machineNo)
+        );
+      } else if (expectedChange.type === 'update') {
+        let found = false;
+        optimisticJobs = optimisticJobs.map(j => {
+          if (j.processName === expectedChange.job.processName &&
+              j.processNo === expectedChange.job.processNo &&
+              j.stepNo === expectedChange.job.stepNo &&
+              j.machineNo === expectedChange.job.machineNo) {
+            found = true;
+            return { ...j, ...expectedChange.job };
+          }
+          return j;
+        });
+        // If we didn't find the job to update, it might be new
+        if (!found && expectedChange.type === 'update') {
+          optimisticJobs.push(expectedChange.job);
+        }
+      }
+    }
+
+    console.log('Jobs after update:', optimisticJobs);
+    window._lastOpenJobs = optimisticJobs; // Update our global store
+    showCurrentOpenJobs(optimisticJobs);
+  }
+
+  function renderOpenJobsTable(openJobs, container) {
+    if (!container) return; // Prevent error if element is not in DOM
+    if (!openJobs || !openJobs.length) {
+      container.innerHTML = '<div style="margin-top:10px; color:#888;">ไม่มีงานที่เปิดอยู่สำหรับโปรเจคนี้</div>';
+      return;
+    }
+    let html = `<div style="margin-top:18px;">
+      <strong>งานที่เปิดอยู่:</strong>
+      <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+        <thead>
+          <tr style="background:#f4f4f4;">
+            <th style="padding:4px 8px;">Process Name</th>
+            <th style="padding:4px 8px;">Process No.</th>
+            <th style="padding:4px 8px;">Step No.</th>
+            <th style="padding:4px 8px;">Machine No.</th>
+            <th style="padding:4px 8px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    openJobs.forEach(job => {
+      html += `<tr>
+        <td style="text-align:center; padding:2px 8px;">${job.processName}</td>
+        <td style="text-align:center; padding:2px 8px;">${job.processNo}</td>
+        <td style="text-align:center; padding:2px 8px;">${job.stepNo}</td>
+        <td style="text-align:center; padding:2px 8px;">${job.machineNo || ''}</td>
+        <td style="text-align:center; padding:2px 8px; font-weight:bold;">${job.status}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+  }
+</script>
+</body>
+</html>
