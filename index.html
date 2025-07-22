@@ -1,15 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TPT-CNC JOB LOG
+<head><script>const url = "https://script.google.com/macros/s/AKfycbzJQYUFo_oMQzdYC0fXFdm3nrUDoEGE0GAjvcvMxwMqRiO_APDn1C2r3Q5m3zSgxNL-sw/exec";
+const GAS_ENDPOINT = url;</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TPT-CNC JOB LOG
   </title>
-  <link rel="icon" type="image/png" href="JOBLOG LOGO.png">
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link href="https://fonts.googleapis.com/css?family=Sarabun:400,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <style>
+<link href="JOBLOG LOGO.png" rel="icon" type="image/png"/>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<link href="https://fonts.googleapis.com/css?family=Sarabun:400,700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
+<style>
     body {
       background: linear-gradient(135deg, #e3eafc 0%, #f4f4f4 100%);
       font-family: 'Sarabun', 'Inter', Arial, sans-serif;
@@ -624,207 +626,211 @@
 </head>
 <body>
 <main>
-  <!-- Scan Screen -->
-  <div id="scan-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%;">
-    <div class="branding-icon" style="text-align:center;">
-      <img src="logo2024-Black.png" alt="Company Logo" style="height:56px; width:auto; display:block; margin-top: 20px;  margin-bottom: -20px;" />
-    </div>
-    <h1 style="text-align:center;">CNC JOB LOG</h1>
-    <div class="qr-bounding-box" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
-      <div style="text-align:center; margin: 5px 0 12px 0; width: 100%;">
-        <span class="instruction-box"><span>แสกน QR Code ตรงนี้</span></span>
-      </div>
-      <div id="qr-reader" class="active"></div>
-    </div>
-  </div>
-
-  <!-- Job Info Screen -->
-  <div id="info-screen" style="display:none;">
-    <button class="btn-back" style="margin-top:25px; margin-bottom:30px; margin-left: 20px;" onclick="resetAll()">← <span style="font-size:1em; vertical-align:middle;">แสกน QR Code</span></button>
-    <div class="main-bounding-box" style="border:2px solid #e0e0e0; border-radius:24px; padding:18px 0 32px 0; margin-bottom:24px; margin-left: 5px; margin-right: 5px; background:#ececec;">
-    <h1>CNC JOB LOG</h1>
-    <div class="job-info" id="job-info"></div>
-    <div class="btn-row">
-        <button class="btn-green main-btn" onclick="showScreen('start-form')">
-          <i class="fas fa-play" style="font-size:1.3em;"></i>
-          <span>เริ่มงานใหม่</span>
-        </button>
-        <button class="btn-red main-btn" onclick="fetchOpenJobsAndShowStopSelector()">
-          <i class="fas fa-stop" style="font-size:1.3em;"></i>
-          <span>งานเสร็จสิ้น</span>
-        </button>
-      </div>
-      <div class="btn-row secondary-btn-row">
-        <button class="btn-secondary pause secondary-btn" onclick="fetchOpenJobsAndShowPauseSelector()">
-          <i class="fas fa-pause" style="font-size:1.3em;"></i>
-          <span>หยุดชั่วคราว/Downtime</span>
-        </button>
-        <button class="btn-secondary continue secondary-btn" onclick="fetchPausedJobsAndShowContinueSelector()">
-          <i class="fas fa-forward" style="font-size:1.3em;"></i>
-          <span>ดำเนินการต่อ</span>
-        </button>
-      </div>
-      <div class="btn-row secondary-btn-row">
-        <button id="machine-setting-btn" class="btn-secondary btn-machine-setting secondary-btn" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="document.getElementById('machine-setting-modal').style.display = 'flex';">
-          <i class="fas fa-cogs" style="font-size:1.3em;"></i>
-          <span>Machine Setting</span>
-        </button>
-        <button id="ot-btn" class="btn-secondary btn-ot secondary-btn" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#fff;" onclick="document.getElementById('ot-modal').style.display = 'flex';">
-          <i class="fas fa-clock" style="font-size:1.3em;"></i>
-          <span>OT</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Start Form Screen -->
-  <form id="start-form" class="form-section" style="display:none;" onsubmit="submitStart(event)">
-    <button class="btn-back" type="button" onclick="showScreen('info-screen')">← กลับไปก่อนหน้า</button>
-    <h2>เริ่มงาน</h2>
-    <div id="start-job-info" class="job-info"></div>
-    <label>Process Name:</label>
-    <select name="processName" required>
-      <option value="">เลือก</option>
-      <option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
-      <option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option> Machine Setting</option>
-    </select>
-    <label>Process No.:</label>
-    <input type="number" name="processNo" required min="1" max="20" inputmode="numeric">
-    <label>Step No.:</label>
-    <input type="text" name="stepNo" required pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" onblur="validateStepNo(this)">
-    <label>Machine No.:</label>
-    <input name="machineNo" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01">
-    <label>รหัสพนักงาน:</label>
-    <input name="employeeCode" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001">
-    <button type="submit">กดเพื่อส่ง</button>
-  </form>
-
-  <!-- Stop Form Screen -->
-  <form id="stop-form" class="form-section" style="display:none;" onsubmit="submitStop(event)">
-    <button class="btn-back" type="button" onclick="showScreen('info-screen')">← กลับไปก่อนหน้า</button>
-    <h2>งานเสร็จสิ้น</h2>
-    <div id="stop-job-info" class="job-info">  </div>
-    <label>Process Name:</label>
-    <select name="processName" required>
-      <option value="">เลือก</option>
-      <option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
-      <option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option value="Machine Setting">Machine Setting</option>
-    </select>
-    <label>Process No.:</label>
-    <input type="number" name="processNo" required min="1" max="20" inputmode="numeric">
-    <label>Step No.:</label>
-    <input type="text" name="stepNo" required pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" onblur="validateStepNo(this)">
-    <label>Machine No.:</label>
-    <input name="machineNo" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01">
-    <label>รหัสพนักงาน:</label>
-    <input name="employeeCode" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001">
-    <div class="stop-extra-field" id="fg-row">
-    <label>FG จำนวน:</label>
-    <input type="number" name="fg" required inputmode="numeric">
-    </div>
-    <div class="stop-extra-field" id="ng-row">
-    <label>NG จำนวน:</label>
-    <input type="number" name="ng" required inputmode="numeric">
-    </div>
-    <div class="stop-extra-field" id="rework-row">
-    <label>Rework จำนวน:</label>
-    <input type="number" name="rework" required inputmode="numeric">
-    </div>
-    <button type="submit">กดเพื่อส่ง</button>
-  </form>
-
-  <!-- Confirmation Screen -->
-  <div id="confirm-screen" class="confirm-section" style="display:none;">
-    <h2>ข้อมูลถูกส่งเข้าสู่ระบบเรียบร้อยแล้ว</h2>
-    <button onclick="resetAll()">กลับไปหน้าแสกน QR Code</button>
-  </div>
-  <!-- Loading Screen -->
-  <div id="loading-screen" class="confirm-section" style="display:none;">
-    <div class="loader-spinner" aria-label="กำลังโหลด" role="status"></div>
-    <h2 style="margin-top:32px;">กำลังส่งข้อมูล...</h2>
-  </div>
-  <!-- Pause/Downtime Reason Modal -->
-  <div id="pause-reason-modal" style="display:none;">
-    <div class="pause-reason-modal-content">
-      <h2 style="text-align:center;">เลือกประเภทการหยุดงาน</h2>
-      <form id="pause-reason-form">
-        <div style="margin-bottom:18px;">
-          <label><input type="radio" name="pauseType" value="PAUSE" required> หยุดชั่วคราว (Pause)</label><br>
-          <label><input type="radio" name="pauseType" value="DOWNTIME"> Down Time</label>
-        </div>
-        <div id="pause-reason-text" style="display:none; margin-bottom:18px;">
-          <label>เลือกเหตุผลหยุดชั่วคราว (Pause):</label>
-          <select name="pauseReasonSelect" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
-            <option value="">-- เลือกเหตุผล --</option>
-            <option>รองาน</option>
-            <option>Wait for Data inspection</option>
-            <option value="other">อื่นๆ โปรดระบุ (Other)</option>
-          </select>
-        </div>
-        <div id="pause-other-reason" style="display:none; margin-bottom:18px;">
-          <label>โปรดระบุเหตุผล (Pause):</label>
-          <input type="text" name="pauseOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" maxlength="100">
-        </div>
-        <div id="downtime-reason-select" style="display:none; margin-bottom:18px;">
-          <label>เลือกเหตุผล Down Time:</label>
-          <select name="downtimeReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
-            <option value="">-- เลือกเหตุผล --</option>
-            <option>Change Tool</option>
-            <option>Over Spec</option>
-            <option>Machine Error</option>
-            <option>Program Error</option>
-            <option>ไฟดับ</option>
-            <option>ลมตก</option>
-            <option value="other">อื่นๆ โปรดระบุ (Other)</option>
-          </select>
-        </div>
-        <div id="downtime-other-reason" style="display:none; margin-bottom:18px;">
-          <label>โปรดระบุเหตุผล:</label>
-          <input type="text" name="downtimeOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" maxlength="100">
-        </div>
-        <div style="text-align:center;">
-          <button type="submit" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ส่งข้อมูล</button>
-          <button type="button" onclick="closePauseReasonModal()" style="padding:10px 24px; border-radius:10px; background:#aaa; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin-left:10px;">ยกเลิก</button>
-        </div>
-      </form>
-    </div>
-  </div>
+<!-- Scan Screen -->
+<div id="scan-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%;">
+<div class="branding-icon" style="text-align:center;">
+<img alt="Company Logo" src="logo2024-Black.png" style="height:56px; width:auto; display:block; margin-top: 20px;  margin-bottom: -20px;"/>
+</div>
+<h1 style="text-align:center;">CNC JOB LOG</h1>
+<div class="qr-bounding-box" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+<div style="text-align:center; margin: 5px 0 12px 0; width: 100%;">
+<span class="instruction-box"><span>แสกน QR Code ตรงนี้</span></span>
+</div>
+<div class="active" id="qr-reader"></div>
+</div>
+</div>
+<!-- Job Info Screen -->
+<div id="info-screen" style="display:none;">
+<button class="btn-back" onclick="resetAll()" style="margin-top:25px; margin-bottom:30px; margin-left: 20px;">← <span style="font-size:1em; vertical-align:middle;">แสกน QR Code</span></button>
+<div class="main-bounding-box" style="border:2px solid #e0e0e0; border-radius:24px; padding:18px 0 32px 0; margin-bottom:24px; margin-left: 5px; margin-right: 5px; background:#ececec;">
+<h1>CNC JOB LOG</h1>
+<div class="job-info" id="job-info"></div>
+<div class="btn-row">
+<button class="btn-green main-btn" onclick="showScreen('start-form')">
+<i class="fas fa-play" style="font-size:1.3em;"></i>
+<span>เริ่มงานใหม่</span>
+</button>
+<button class="btn-red main-btn" onclick="fetchOpenJobsAndShowStopSelector()">
+<i class="fas fa-stop" style="font-size:1.3em;"></i>
+<span>งานเสร็จสิ้น</span>
+</button>
+</div>
+<div class="btn-row secondary-btn-row">
+<button class="btn-secondary pause secondary-btn" onclick="fetchOpenJobsAndShowPauseSelector()">
+<i class="fas fa-pause" style="font-size:1.3em;"></i>
+<span>หยุดชั่วคราว/Downtime</span>
+</button>
+<button class="btn-secondary continue secondary-btn" onclick="fetchPausedJobsAndShowContinueSelector()">
+<i class="fas fa-forward" style="font-size:1.3em;"></i>
+<span>ดำเนินการต่อ</span>
+</button>
+</div>
+<div class="btn-row secondary-btn-row">
+<button class="btn-secondary btn-machine-setting secondary-btn" id="machine-setting-btn" onclick="document.getElementById('machine-setting-modal').style.display = 'flex';" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+<i class="fas fa-cogs" style="font-size:1.3em;"></i>
+<span>Machine Setting</span>
+</button>
+<button class="btn-secondary btn-ot secondary-btn" id="ot-btn" onclick="checkOTStartTime()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#fff;">
+<i class="fas fa-clock" style="font-size:1.3em;"></i>
+<span>OT</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Start Form Screen -->
+<form class="form-section" id="start-form" onsubmit="submitStart(event)" style="display:none;">
+<button class="btn-back" onclick="showScreen('info-screen')" type="button">← กลับไปก่อนหน้า</button>
+<h2>เริ่มงาน</h2>
+<div class="job-info" id="start-job-info"></div>
+<label>Process Name:</label>
+<select name="processName" required="">
+<option value="">เลือก</option>
+<option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+<option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option> Machine Setting</option>
+</select>
+<label>Process No.:</label>
+<input inputmode="numeric" max="20" min="1" name="processNo" required="" type="number"/>
+<label>Step No.:</label>
+<input name="stepNo" onblur="validateStepNo(this)" pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" required="" type="text"/>
+<label>Machine No.:</label>
+<input name="machineNo" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01" required="" style="text-transform: uppercase;"/>
+<label>รหัสพนักงาน:</label>
+<input name="employeeCode" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001" required="" style="text-transform: uppercase;"/>
+<button type="submit">กดเพื่อส่ง</button>
+</form>
+<!-- Stop Form Screen -->
+<form class="form-section" id="stop-form" onsubmit="submitStop(event)" style="display:none;">
+<button class="btn-back" onclick="showScreen('info-screen')" type="button">← กลับไปก่อนหน้า</button>
+<h2>งานเสร็จสิ้น</h2>
+<div class="job-info" id="stop-job-info"> </div>
+<label>Process Name:</label>
+<select name="processName" required="">
+<option value="">เลือก</option>
+<option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+<option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option value="Machine Setting">Machine Setting</option>
+</select>
+<label>Process No.:</label>
+<input inputmode="numeric" max="20" min="1" name="processNo" required="" type="number"/>
+<label>Step No.:</label>
+<input name="stepNo" onblur="validateStepNo(this)" pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" required="" type="text"/>
+<label>Machine No.:</label>
+<input name="machineNo" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01" required="" style="text-transform: uppercase;"/>
+<label>รหัสพนักงาน:</label>
+<input name="employeeCode" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001" required="" style="text-transform: uppercase;"/>
+<div class="stop-extra-field" id="fg-row">
+<label>FG จำนวน:</label>
+<input inputmode="numeric" name="fg" required="" type="number"/>
+</div>
+<div class="stop-extra-field" id="ng-row">
+<label>NG จำนวน:</label>
+<input inputmode="numeric" name="ng" required="" type="number"/>
+</div>
+<div class="stop-extra-field" id="rework-row">
+<label>Rework จำนวน:</label>
+<input inputmode="numeric" name="rework" required="" type="number"/>
+</div>
+<button type="submit">กดเพื่อส่ง</button>
+</form>
+<!-- Confirmation Screen -->
+<div class="confirm-section" id="confirm-screen" style="display:none;">
+<h2>ข้อมูลถูกส่งเข้าสู่ระบบเรียบร้อยแล้ว</h2>
+<button onclick="resetAll()">กลับไปหน้าแสกน QR Code</button>
+</div>
+<!-- Loading Screen -->
+<div class="confirm-section" id="loading-screen" style="display:none;">
+<div aria-label="กำลังโหลด" class="loader-spinner" role="status"></div>
+<h2 style="margin-top:32px;">กำลังส่งข้อมูล...</h2>
+</div>
+<!-- Pause/Downtime Reason Modal -->
+<div id="pause-reason-modal" style="display:none;">
+<div class="pause-reason-modal-content">
+<h2 style="text-align:center;">เลือกประเภทการหยุดงาน</h2>
+<form id="pause-reason-form">
+<div style="margin-bottom:18px;">
+<label><input name="pauseType" required="" type="radio" value="PAUSE"/> หยุดชั่วคราว (Pause)</label><br/>
+<label><input name="pauseType" type="radio" value="DOWNTIME"/> Down Time</label>
+</div>
+<div id="pause-reason-text" style="display:none; margin-bottom:18px;">
+<label>เลือกเหตุผลหยุดชั่วคราว (Pause):</label>
+<select name="pauseReasonSelect" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
+<option value="">-- เลือกเหตุผล --</option>
+<option>รองาน</option>
+<option>Wait for Data inspection</option>
+<option value="other">อื่นๆ โปรดระบุ (Other)</option>
+</select>
+</div>
+<div id="pause-other-reason" style="display:none; margin-bottom:18px;">
+<label>โปรดระบุเหตุผล (Pause):</label>
+<input maxlength="100" name="pauseOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" type="text"/>
+</div>
+<div id="downtime-reason-select" style="display:none; margin-bottom:18px;">
+<label>เลือกเหตุผล Down Time:</label>
+<select name="downtimeReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
+<option value="">-- เลือกเหตุผล --</option>
+<option>Change Tool</option>
+<option>Over Spec</option>
+<option>Machine Error</option>
+<option>Program Error</option>
+<option>ไฟดับ</option>
+<option>ลมตก</option>
+<option value="other">อื่นๆ โปรดระบุ (Other)</option>
+</select>
+</div>
+<div id="downtime-other-reason" style="display:none; margin-bottom:18px;">
+<label>โปรดระบุเหตุผล:</label>
+<input maxlength="100" name="downtimeOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" type="text"/>
+</div>
+<div style="text-align:center;">
+<button style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;" type="submit">ส่งข้อมูล</button>
+<button onclick="closePauseReasonModal()" style="padding:10px 24px; border-radius:10px; background:#aaa; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin-left:10px;" type="button">ยกเลิก</button>
+</div>
+</form>
+</div>
+</div>
 </main>
-
 <!-- Machine Setting Modal -->
 <div id="machine-setting-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
-    <h2>Machine Setting</h2>
-    <p>เลือกประเภทการทำงาน</p>
-    <button id="machine-setting-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม</button>
-    <button id="machine-setting-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด</button>
-    <br><br>
-    <button onclick="closeMachineSettingModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
-  </div>
+<div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+<h2>Machine Setting</h2>
+<p>เลือกประเภทการทำงาน</p>
+<button id="machine-setting-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม</button>
+<button id="machine-setting-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด</button>
+<br/><br/>
+<button onclick="closeMachineSettingModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
 </div>
-
+</div>
 <!-- OT Modal -->
 <div id="ot-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
-    <h2>OT (Overtime)</h2>
-    <p>เลือกประเภทการทำงาน OT</p>
-    <button id="ot-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม OT</button>
-    <button id="ot-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด OT</button>
-    <br><br>
-    <button onclick="closeOTModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
-  </div>
+<div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+<h2>OT (Overtime)</h2>
+<p>เลือกประเภทการทำงาน OT</p>
+<button id="ot-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม OT</button>
+<button id="ot-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด OT</button>
+<br/><br/>
+<button onclick="closeOTModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
 </div>
-
+</div>
 <script>
   // Ensure all functions are in the global scope
+
+  // Check OT start time
+  function checkOTStartTime() {
+    const now = new Date();
+    const startTime = new Date();
+    startTime.setHours(17, 30, 0);
+
+    if (now < startTime) {
+      alert("ไม่สามารถเริ่ม OT ก่อนเวลา 17:30 น.");
+      return;
+    }
+    
+    document.getElementById('ot-modal').style.display = 'flex';
+  }
 
   // Global QR data object
   let qrData = {};
   let scanHandled = false;
   let isSubmitting = false;
-
-  // Define the endpoint URL once at the top of the script
-  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzJQYUFo_oMQzdYC0fXFdm3nrUDoEGE0GAjvcvMxwMqRiO_APDn1C2r3Q5m3zSgxNL-sw/exec";
 
   // Validate Step No. input to allow numbers and plus signs
   function validateStepNo(input) {
@@ -956,18 +962,19 @@
   // Show modal to select open job to pause
   function fetchOpenJobsAndShowPauseSelector() {
   showOpenJobsLoading();
-    const params = new URLSearchParams({
-      mode: 'openJobs',
-      projectNo: qrData.projectNo,
-      partName: qrData.partName
-    });
-    fetch(`${GAS_ENDPOINT}?${params.toString()}`)
+    const GAS_ENDPOINT = url;
+  const params = new URLSearchParams({
+    mode: 'openJobs',
+    projectNo: qrData.projectNo,
+    partName: qrData.partName
+  });
+  fetch(`${GAS_ENDPOINT}?${params.toString()}`)
     .then(res => res.json())
     .then(openJobs => {
       hideOpenJobsLoading();
-        // Only show jobs with status OPEN
-        const openOnly = openJobs.filter(job => job.status === 'OPEN');
-        showPauseJobsTableSelector(openOnly);
+      // Show jobs with status OPEN or OT
+      const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
+      showPauseJobsTableSelector(pausableJobs);
     })
     .catch(() => {
       hideOpenJobsLoading();
@@ -1256,6 +1263,7 @@ function closeOpenJobsSelector() {
       }});
       closePauseReasonModal();
       showScreen('loading-screen');
+      const GAS_ENDPOINT = url;
       fetch(GAS_ENDPOINT, {
         method: "POST",
         mode: "cors",
@@ -1345,6 +1353,7 @@ function closeOpenJobsSelector() {
   // Show modal to select paused job to continue
   function fetchPausedJobsAndShowContinueSelector() {
     showOpenJobsLoading();
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1437,6 +1446,7 @@ function closeOpenJobsSelector() {
     if (!confirm('คุณต้องการดำเนินงานนี้ต่อใช่หรือไม่?')) return;
     closeContinueJobsSelector();
     showScreen('loading-screen');
+    const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1481,6 +1491,7 @@ function closeOpenJobsSelector() {
   // Fetch open jobs and show the stop selector modal
   function fetchOpenJobsAndShowStopSelector() {
     showOpenJobsLoading();
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1515,6 +1526,7 @@ function closeOpenJobsSelector() {
       employeeCode: formData.get('employeeCode'),
       status: 'OPEN'
     };
+    const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1558,6 +1570,7 @@ function closeOpenJobsSelector() {
       rework: formData.get('rework'),
       status: 'CLOSE'
     };
+    const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1603,6 +1616,7 @@ function closeOpenJobsSelector() {
     closeMachineSettingModal();
     // Fetch open jobs and show stop selector, but only for Machine Setting jobs
     showOpenJobsLoading();
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1622,15 +1636,15 @@ function closeOpenJobsSelector() {
       });
   };
 
-  // --- OT Button Logic ---
-  document.getElementById('ot-btn').onclick = function() {
-    const now = new Date();
-    if (now.getHours() < 17) {
-              alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:30 น.');
-      return;
-    }
-    document.getElementById('ot-modal').style.display = 'flex';
-  };
+  // // --- OT Button Logic ---
+  // document.getElementById('ot-btn').onclick = function() {
+  //   const now = new Date();
+  //   if (now.getHours() < 17 || (now.getHours() === 17 && now.getMinutes() < 30)) {
+  //     alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:30 น.');
+  //     return;
+  //   }
+  //   document.getElementById('ot-modal').style.display = 'flex';
+  // };
   function closeOTModal() {
     document.getElementById('ot-modal').style.display = 'none';
   }
@@ -1638,6 +1652,7 @@ function closeOpenJobsSelector() {
     closeOTModal();
     // Fetch open jobs and show selector for OT start
     showOpenJobsLoading();
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1728,13 +1743,15 @@ function closeOpenJobsSelector() {
     const job = window._openJobs[idx];
     if (!job) return;
     const now = new Date();
-    if (now.getHours() < 17 || (now.getHours() === 17 && now.getMinutes() < 30)) {
-      alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:30 น.');
-      return;
-    }
+    // Check for 17:30 (hour is 17, minutes >= 30)
+    // if (now.getHours() < 17 || (now.getHours() === 17 && now.getMinutes() < 30)) {
+    //   alert('ไม่สามารถเริ่ม OT ได้ก่อนเวลา 17:30 น.');
+    //   return;
+    // }
     if (!confirm('คุณต้องการเริ่ม OT ใช่หรือไม่?')) return;
     closeOpenJobsSelector();
     showScreen('loading-screen');
+    const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1770,6 +1787,7 @@ function closeOpenJobsSelector() {
     closeOTModal();
     // Fetch open jobs and show stop selector, but only for OT jobs
     showOpenJobsLoading();
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
@@ -1862,6 +1880,7 @@ function closeOpenJobsSelector() {
     if (!confirm('คุณต้องการหยุด OT ใช่หรือไม่?')) return;
     closeOpenJobsSelector();
     showScreen('loading-screen');
+    const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
       mode: "cors",
@@ -1910,6 +1929,7 @@ function closeOpenJobsSelector() {
     // Show loading spinner only when fetching from backend
     container.innerHTML = '<div style="margin-top:10px; text-align:center;"><span class="loader-spinner" style="width:32px; height:32px; border-width:4px; display:inline-block; vertical-align:middle;"></span> <span style="font-size:1.1em; color:#888;">กำลังโหลด...</span></div>';
 
+    const GAS_ENDPOINT = url;
     const params = new URLSearchParams({
       mode: 'openJobs',
       projectNo: qrData.projectNo,
