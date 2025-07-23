@@ -1116,284 +1116,35 @@ const GAS_ENDPOINT = url;</script>
       window.qrScanner = new Html5Qrcode("qr-reader");
       console.log('QR Scanner initialized');
       
-      Html5Qrcode.getCameras().then(devices => {
-        console.log('Available cameras:', devices);
-        console.log('Number of cameras found:', devices.length);
-        
-        // Helper functions to identify camera types
-        function isMainBackCamera(label) {
-          const lowerLabel = label.toLowerCase();
+      // Simple camera start - let device use its default camera
+      const config = { 
+        fps: 10, 
+        qrbox: { width: 320, height: 320 },
+        aspectRatio: 1.0,
+        disableFlip: false,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+      };
+      
+      console.log('Starting camera with default settings...');
+      
+      window.qrScanner.start(
+        { facingMode: "environment" }, // Request back camera
+        config,
+        qr => {
+          console.log('QR Code detected:', qr);
+          if (scanHandled) return;
           
-          // iPhone-specific detection: "wide" is the main 1x camera
-          if (lowerLabel.includes('wide') && !lowerLabel.includes('ultra')) {
-            console.log('Detected iPhone main camera (wide, not ultra wide):', label);
-            return true;
-          }
-          
-          // General main back camera indicators
-          const mainIndicators = [
-            'back',
-            'rear', 
-            'environment',
-            'camera 0',
-            'main',
-            'primary',
-            '1x'  // Added 1x zoom indicator
-          ];
-          
-          // Secondary camera indicators (cameras we want to avoid)
-          const secondaryIndicators = [
-            'ultra wide',    // iPhone ultra wide (0.5x)
-            'ultra-wide',    
-            'ultrawide',
-            'telephoto',     // iPhone telephoto (2x, 3x)
-            'zoom',
-            'macro',
-            'depth',
-            '0.5x',          // Ultra wide zoom level
-            '2x',            // Telephoto zoom levels
-            '3x',
-            '5x',
-            '10x',
-            'periscope',
-            'portrait'
-          ];
-          
-          // Check for secondary indicators first (more specific)
-          const hasSecondaryIndicator = secondaryIndicators.some(indicator => lowerLabel.includes(indicator));
-          if (hasSecondaryIndicator) {
-            console.log('Camera rejected as secondary:', label);
-            return false;
-          }
-          
-          // Check if it contains main indicators
-          const hasMainIndicator = mainIndicators.some(indicator => lowerLabel.includes(indicator));
-          
-          if (hasMainIndicator) {
-            console.log('Camera identified as main by indicator:', label);
-            return true;
-          }
-          
-          // If no explicit indicators, it might still be main camera
-          // (some devices don't label clearly)
-          console.log('Camera has no clear indicators:', label);
-          return false;
-        }
-        
-        function isSecondaryBackCamera(label) {
-          const lowerLabel = label.toLowerCase();
-          
-          const secondaryIndicators = [
-            'ultra wide',    // iPhone ultra wide (0.5x) - most specific first
-            'ultra-wide',    
-            'ultrawide',
-            'telephoto',     // iPhone telephoto cameras
-            'zoom',
-            'macro',
-            'depth',
-            '0.5x',          // Ultra wide zoom level
-            '2x',            // Telephoto zoom levels  
-            '3x',
-            '5x',
-            '10x',
-            'periscope',
-            'portrait'
-          ];
-          
-          const isSecondary = secondaryIndicators.some(indicator => lowerLabel.includes(indicator));
-          
-          if (isSecondary) {
-            console.log('Camera identified as secondary:', label);
-          }
-          
-          return isSecondary;
-        }
-        
-        // Log detailed camera information
-        devices.forEach((device, index) => {
-          const label = (device.label || '').toLowerCase();
-          console.log(`Camera ${index}:`, {
-            id: device.id,
-            label: device.label,
-            isFront: label.includes('front') || label.includes('user'),
-            isMainBack: isMainBackCamera(label),
-            isSecondaryBack: isSecondaryBackCamera(label),
-            // iPhone-specific checks
-            isWide: label.includes('wide'),
-            isUltraWide: label.includes('ultra'),
-            isTelephoto: label.includes('telephoto'),
-            // Additional zoom indicators
-            hasZoomLevel: label.includes('0.5x') || label.includes('1x') || label.includes('2x') || label.includes('3x')
-          });
-        });
-        
-        if (devices && devices.length) {
-          // Only look for the main back camera - no front camera support
-          let backCamera = null;
-          
-          devices.forEach((device, index) => {
-            const label = (device.label || '').toLowerCase();
-            console.log(`Analyzing camera ${index}:`, {
-              id: device.id,
-              label: device.label,
-              isFront: label.includes('front') || label.includes('user'),
-              isMainBack: isMainBackCamera(label),
-              isSecondaryBack: isSecondaryBackCamera(label)
-            });
+          // Try to parse as JSON first
+          try {
+            qrData = JSON.parse(qr);
+            console.log('QR Data parsed successfully as JSON:', qrData);
             
-            // Skip front cameras completely
-            if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
-              console.log('Skipping front camera:', label);
-              return; // Skip front cameras
+            // Validate required fields
+            if (!qrData.projectNo || !qrData.customerName || !qrData.partName || 
+                !qrData.drawingNo || !qrData.quantityOrdered) {
+              throw new Error('Missing required fields in QR data');
             }
             
-            // Identify MAIN back camera (default camera, not zoom/wide/macro)
-            if (isMainBackCamera(label)) {
-              if (!backCamera) { // Take the first main back camera found
-                backCamera = { ...device, originalIndex: index, type: 'back' };
-                console.log('Found main back camera:', backCamera);
-              }
-            }
-          });
-          
-          // If we didn't find a main back camera explicitly, use fallback logic
-          if (!backCamera) {
-            console.log('No main back camera found explicitly, using fallback logic...');
-            
-            // iPhone-specific fallback: look for "wide" camera (but not "ultra wide")
-            for (let i = 0; i < devices.length; i++) {
-              const device = devices[i];
-              const label = (device.label || '').toLowerCase();
-              
-              // Skip front cameras
-              if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
-                continue;
-              }
-              
-              // iPhone: Look specifically for "wide" but not "ultra wide"
-              if (label.includes('wide') && !label.includes('ultra')) {
-                backCamera = { ...device, originalIndex: i, type: 'back' };
-                console.log('Found iPhone main camera (wide, not ultra):', backCamera);
-                break;
-              }
-            }
-            
-            // If still no camera, look for any back camera that's NOT explicitly secondary
-            if (!backCamera) {
-              for (let i = 0; i < devices.length; i++) {
-                const device = devices[i];
-                const label = (device.label || '').toLowerCase();
-                
-                // Skip front cameras
-                if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
-                  continue;
-                }
-                
-                // Skip obvious secondary cameras
-                if (isSecondaryBackCamera(label)) {
-                  continue;
-                }
-                
-                // This should be the main back camera
-                backCamera = { ...device, originalIndex: i, type: 'back' };
-                console.log('Found back camera using general fallback:', backCamera);
-                break;
-              }
-            }
-          }
-          
-          // Final fallback: use the first non-front camera
-          if (!backCamera) {
-            console.log('Using final fallback for back camera...');
-            
-            for (let i = 0; i < devices.length; i++) {
-              const device = devices[i];
-              const label = (device.label || '').toLowerCase();
-              
-              // Skip front cameras
-              if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
-                continue;
-              }
-              
-              backCamera = { ...device, originalIndex: i, type: 'back' };
-              console.log('Final fallback back camera:', backCamera);
-              break;
-            }
-          }
-          
-          if (backCamera) {
-            console.log('Selected back camera:', backCamera);
-            startCameraWithId(backCamera.id);
-          } else {
-            console.error('No back camera found');
-            alert("ไม่พบกล้องหลัง กรุณาตรวจสอบการเชื่อมต่อกล้องและสิทธิ์การเข้าถึง");
-          }
-        } else {
-          console.error('No cameras found');
-          alert("ไม่พบกล้อง กรุณาตรวจสอบการเชื่อมต่อกล้องและสิทธิ์การเข้าถึง");
-        }
-      }).catch(err => {
-        console.error('Get cameras error:', err);
-        alert("ไม่สามารถเข้าถึงกล้องได้: " + err + "\n\nกรุณาตรวจสอบ:\n1. อนุญาตให้เข้าถึงกล้อง\n2. ปิดแอปพลิเคชันอื่นที่ใช้กล้อง\n3. ใช้ HTTPS หรือ localhost");
-      });
-    } catch (initError) {
-      console.error('QR Scanner initialization error:', initError);
-      alert("ไม่สามารถเริ่มต้น QR Scanner ได้: " + initError);
-    }
-  }
-
-  // Start camera with specific ID
-  function startCameraWithId(cameraId) {
-    console.log('startCameraWithId called with:', cameraId);
-    
-    if (!window.qrScanner) {
-      console.error('QR Scanner not initialized');
-      return;
-    }
-    
-    const config = { 
-      fps: 10, 
-      qrbox: { width: 320, height: 320 },
-      aspectRatio: 1.0,
-      disableFlip: false,
-      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-    };
-    
-    console.log('Starting camera with config:', config);
-    
-    window.qrScanner.start(
-      cameraId,
-      config,
-      qr => {
-        console.log('QR Code detected:', qr);
-        if (scanHandled) return;
-        
-        // Try to parse as JSON first
-        try {
-          qrData = JSON.parse(qr);
-          console.log('QR Data parsed successfully as JSON:', qrData);
-          
-          // Validate required fields
-          if (!qrData.projectNo || !qrData.customerName || !qrData.partName || 
-              !qrData.drawingNo || !qrData.quantityOrdered) {
-            throw new Error('Missing required fields in QR data');
-          }
-          
-          const qrReader = document.getElementById('qr-reader');
-          qrReader.style.border = '4px solid #0f0';
-          scanHandled = true;
-          setTimeout(() => {
-            fillInfoScreen();
-            showScreen('info-screen');
-          }, 150);
-          window.qrScanner.stop();
-          window.qrScanner = null;
-          
-        } catch (parseError) {
-          console.log('JSON parse failed, trying alternative formats:', parseError);
-          
-          // Try to parse as simple text format (comma-separated or other formats)
-          if (tryAlternativeFormats(qr)) {
             const qrReader = document.getElementById('qr-reader');
             qrReader.style.border = '4px solid #0f0';
             scanHandled = true;
@@ -1403,90 +1154,65 @@ const GAS_ENDPOINT = url;</script>
             }, 150);
             window.qrScanner.stop();
             window.qrScanner = null;
-          } else {
-            console.error('All QR parse attempts failed:', parseError);
-            const qrReader = document.getElementById('qr-reader');
-            qrReader.style.border = '4px solid #e00';
-            setTimeout(() => {
-              qrReader.style.border = '';
-            }, 1000);
             
-            // Show more helpful error message
-            const errorMsg = `QR Code ไม่สามารถอ่านได้\n\nข้อมูลที่สแกนได้: ${qr.substring(0, 100)}${qr.length > 100 ? '...' : ''}\n\nกรุณาลองใหม่หรือใช้การใส่ข้อมูลด้วยตนเอง`;
-            alert(errorMsg);
+          } catch (parseError) {
+            console.log('JSON parse failed, trying alternative formats:', parseError);
+            
+            // Try to parse as simple text format (comma-separated or other formats)
+            if (tryAlternativeFormats(qr)) {
+              const qrReader = document.getElementById('qr-reader');
+              qrReader.style.border = '4px solid #0f0';
+              scanHandled = true;
+              setTimeout(() => {
+                fillInfoScreen();
+                showScreen('info-screen');
+              }, 150);
+              window.qrScanner.stop();
+              window.qrScanner = null;
+            } else {
+              console.error('All QR parse attempts failed:', parseError);
+              const qrReader = document.getElementById('qr-reader');
+              qrReader.style.border = '4px solid #e00';
+              setTimeout(() => {
+                qrReader.style.border = '';
+              }, 1000);
+              
+              // Show more helpful error message
+              const errorMsg = `QR Code ไม่สามารถอ่านได้\n\nข้อมูลที่สแกนได้: ${qr.substring(0, 100)}${qr.length > 100 ? '...' : ''}\n\nกรุณาลองใหม่หรือใช้การใส่ข้อมูลด้วยตนเอง`;
+              alert(errorMsg);
+            }
           }
+        },
+        errorMessage => {
+          // Handle scanning errors more gracefully
+          if (errorMessage && !errorMessage.includes('NotFoundException') && 
+              !errorMessage.includes('No MultiFormat Readers')) {
+            console.log('QR Scanner error:', errorMessage);
+          }
+          // Don't show alerts for common scanning errors that occur during normal operation
         }
-      },
-      errorMessage => {
-        // Handle scanning errors more gracefully
-        if (errorMessage && !errorMessage.includes('NotFoundException') && 
-            !errorMessage.includes('No MultiFormat Readers')) {
-          console.log('QR Scanner error:', errorMessage);
-        }
-        // Don't show alerts for common scanning errors that occur during normal operation
-      }
-    ).catch(err => {
-      console.error('Camera start error:', err);
-      console.error('Error details:', err.message || err);
-      
-      // Try to provide more specific error messages
-      let errorMessage = "ไม่สามารถเริ่มกล้องได้: " + (err.message || err);
-      
-      if (err.message && err.message.includes('Permission')) {
-        errorMessage = "ไม่ได้รับอนุญาตให้เข้าถึงกล้อง กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์";
-      } else if (err.message && err.message.includes('NotFoundError')) {
-        errorMessage = "ไม่พบกล้องที่เลือก กำลังลองกล้องอื่น...";
+      ).catch(err => {
+        console.error('Camera start error:', err);
+        console.error('Error details:', err.message || err);
         
-        // Try to switch to next available camera if this one fails
-        if (window.availableCameras && window.availableCameras.length > 1) {
-          setTimeout(() => {
-            switchCamera();
-          }, 1000);
-          return;
+        // Try to provide more specific error messages
+        let errorMessage = "ไม่สามารถเริ่มกล้องได้: " + (err.message || err);
+        
+        if (err.message && err.message.includes('Permission')) {
+          errorMessage = "ไม่ได้รับอนุญาตให้เข้าถึงกล้อง กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์";
+        } else if (err.message && err.message.includes('NotFoundError')) {
+          errorMessage = "ไม่พบกล้อง กรุณาตรวจสอบการเชื่อมต่อกล้อง";
         }
-      }
-      
-      alert(errorMessage);
-    });
+        
+        alert(errorMessage);
+      });
+    } catch (initError) {
+      console.error('QR Scanner initialization error:', initError);
+      alert("ไม่สามารถเริ่มต้น QR Scanner ได้: " + initError);
+    }
   }
 
   // Camera switching functionality removed - only using back camera
-
-  // All camera switching functions removed - using back camera only
-
-  // All camera switching functions removed - using back camera only
-
-  /*
-  // All camera switching code removed - using back camera only
-  */
-  /*
-  // Camera switching function removed - using back camera only
-  function performCameraSwitch() {
-    setTimeout(() => {
-      try {
-        console.log('Creating new Html5Qrcode instance...');
-        window.qrScanner = new Html5Qrcode("qr-reader");
-        
-        // Start the new camera
-        startCameraWithId(nextCamera.id);
-        
-        // Re-add the camera switch button after a short delay to ensure camera is started
-        setTimeout(() => {
-          addCameraSwitchButton();
-        }, 1000);
-        
-      } catch (error) {
-        console.error('Error switching camera:', error);
-        alert('ไม่สามารถเปลี่ยนกล้องได้: ' + error.message);
-        
-        // Re-add button even if there's an error
-        setTimeout(() => {
-          addCameraSwitchButton();
-        }, 1000);
-      }
-    }, 500);
-  }
-  */
 
   // Try to parse QR code in alternative formats
   function tryAlternativeFormats(qrText) {
