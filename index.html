@@ -1132,53 +1132,80 @@ const GAS_ENDPOINT = url;</script>
         });
         
         if (devices && devices.length) {
-          // Store cameras globally for switching
-          window.availableCameras = devices;
-          window.currentCameraIndex = 0;
+          // Filter cameras to only include front and back cameras
+          const frontAndBackCameras = [];
+          let frontCamera = null;
+          let backCamera = null;
           
-          // Try to find back camera first (multiple methods)
-          let backCameraIndex = devices.findIndex(device => {
+          devices.forEach((device, index) => {
             const label = (device.label || '').toLowerCase();
-            console.log('Checking camera:', device.label, 'for back camera indicators');
+            console.log(`Analyzing camera ${index}:`, {
+              id: device.id,
+              label: device.label,
+              isFront: label.includes('front') || label.includes('user'),
+              isBack: label.includes('back') || label.includes('rear') || label.includes('environment')
+            });
             
-            return label.includes('back') ||
-                   label.includes('rear') ||
-                   label.includes('environment') ||
-                   label.includes('camera 0') ||
-                   (label.includes('camera') && !label.includes('front'));
+            // Identify front camera
+            if (label.includes('front') || label.includes('user')) {
+              frontCamera = { ...device, originalIndex: index, type: 'front' };
+            }
+            // Identify back camera
+            else if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+              backCamera = { ...device, originalIndex: index, type: 'back' };
+            }
+            // If no explicit labeling, use heuristics
+            else if (!frontCamera && !backCamera) {
+              // On mobile, first camera is often front, last is often back
+              if (index === 0 && devices.length > 1) {
+                frontCamera = { ...device, originalIndex: index, type: 'front' };
+              } else if (index === devices.length - 1) {
+                backCamera = { ...device, originalIndex: index, type: 'back' };
+              }
+            }
           });
           
-          console.log('Back camera index found:', backCameraIndex);
-          
-          // If still no back camera found, use the last camera (often back camera on mobile)
-          if (backCameraIndex === -1 && devices.length > 1) {
-            backCameraIndex = devices.length - 1;
-            console.log('No explicit back camera found, using last camera:', backCameraIndex);
+          // Build filtered camera array with only front and back cameras
+          if (backCamera) {
+            frontAndBackCameras.push(backCamera);
+            console.log('Added back camera:', backCamera);
+          }
+          if (frontCamera) {
+            frontAndBackCameras.push(frontCamera);
+            console.log('Added front camera:', frontCamera);
           }
           
-          // Use back camera if found, otherwise use first camera
-          if (backCameraIndex !== -1) {
-            window.currentCameraIndex = backCameraIndex;
+          // If we couldn't identify front/back explicitly, fall back to first two cameras
+          if (frontAndBackCameras.length === 0 && devices.length >= 2) {
+            console.log('Could not identify front/back cameras explicitly, using first two cameras');
+            frontAndBackCameras.push({ ...devices[0], originalIndex: 0, type: 'camera1' });
+            frontAndBackCameras.push({ ...devices[1], originalIndex: 1, type: 'camera2' });
+          } else if (frontAndBackCameras.length === 0 && devices.length === 1) {
+            console.log('Only one camera available, using it');
+            frontAndBackCameras.push({ ...devices[0], originalIndex: 0, type: 'single' });
           }
           
-          const selectedCamera = devices[window.currentCameraIndex];
+          // Store filtered cameras globally for switching
+          window.availableCameras = frontAndBackCameras;
+          window.allCameras = devices; // Keep reference to all cameras
+          
+          console.log('Filtered cameras for switching:', frontAndBackCameras);
+          
+          // Start with back camera if available, otherwise first available
+          window.currentCameraIndex = 0; // Start with first camera in filtered list (should be back camera)
+          
+          const selectedCamera = frontAndBackCameras[window.currentCameraIndex];
           console.log('Using camera:', selectedCamera);
           console.log('Selected camera index:', window.currentCameraIndex);
           
-          // Add camera switch button if multiple cameras available
-          console.log('Checking if should add camera switch button. Cameras found:', devices.length);
-          if (devices.length > 1) {
-            console.log('Multiple cameras detected, adding switch button...');
+          // Add camera switch button if we have both front and back cameras
+          console.log('Checking if should add camera switch button. Filtered cameras found:', frontAndBackCameras.length);
+          if (frontAndBackCameras.length > 1) {
+            console.log('Front and back cameras detected, adding switch button...');
             addCameraSwitchButton();
           } else {
-            console.log('Only one camera found, no switch button needed');
+            console.log('Only one camera type found, no switch button needed');
           }
-          
-          // Temporary: Always add the button for testing
-          console.log('Adding camera switch button for testing...');
-          setTimeout(() => {
-            addCameraSwitchButton();
-          }, 1000);
           
           startCameraWithId(selectedCamera.id);
         } else {
@@ -1419,12 +1446,23 @@ const GAS_ENDPOINT = url;</script>
     const switchButton = document.querySelector('.camera-switch-btn');
     if (switchButton && window.availableCameras && window.currentCameraIndex !== undefined) {
       const currentCamera = window.availableCameras[window.currentCameraIndex];
-      const cameraName = currentCamera.label || `Camera ${window.currentCameraIndex + 1}`;
-      const cameraType = cameraName.toLowerCase().includes('front') ? 'Front' : 
-                        cameraName.toLowerCase().includes('back') ? 'Back' : 
-                        cameraName.toLowerCase().includes('rear') ? 'Back' : 'Camera';
+      const cameraType = currentCamera?.type || 'unknown';
       
-      switchButton.title = `Current: ${cameraType} Camera - Click to switch`;
+      let displayType;
+      if (cameraType === 'front') {
+        displayType = 'Front Camera';
+      } else if (cameraType === 'back') {
+        displayType = 'Back Camera';
+      } else {
+        displayType = currentCamera?.label || `Camera ${window.currentCameraIndex + 1}`;
+      }
+      
+      const nextIndex = (window.currentCameraIndex + 1) % window.availableCameras.length;
+      const nextCamera = window.availableCameras[nextIndex];
+      const nextType = nextCamera?.type === 'front' ? 'Front' : 
+                      nextCamera?.type === 'back' ? 'Back' : 'Other';
+      
+      switchButton.title = `Current: ${displayType} - Click to switch to ${nextType} Camera`;
       console.log('Updated camera switch button tooltip:', switchButton.title);
     }
   }
@@ -1466,13 +1504,46 @@ const GAS_ENDPOINT = url;</script>
   }
 
   function performCameraSwitch() {
-    // Move to next camera
+    // Move to next camera in filtered list (front/back only)
     const oldIndex = window.currentCameraIndex;
     window.currentCameraIndex = (window.currentCameraIndex + 1) % window.availableCameras.length;
     const nextCamera = window.availableCameras[window.currentCameraIndex];
     
-    console.log('Switching from camera', oldIndex, 'to camera', window.currentCameraIndex);
+    const oldCameraType = window.availableCameras[oldIndex]?.type || 'unknown';
+    const newCameraType = nextCamera?.type || 'unknown';
+    
+    console.log(`Switching from ${oldCameraType} camera (index ${oldIndex}) to ${newCameraType} camera (index ${window.currentCameraIndex})`);
     console.log('Next camera:', nextCamera);
+    
+    // Show user feedback about which camera we're switching to
+    const feedbackMsg = newCameraType === 'front' ? 'กำลังเปลี่ยนเป็นกล้องหน้า...' : 
+                       newCameraType === 'back' ? 'กำลังเปลี่ยนเป็นกล้องหลัง...' : 
+                       'กำลังเปลี่ยนกล้อง...';
+    
+    // Show temporary feedback
+    const qrReader = document.getElementById('qr-reader');
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      z-index: 1001;
+      font-size: 14px;
+    `;
+    feedbackDiv.textContent = feedbackMsg;
+    qrReader.appendChild(feedbackDiv);
+    
+    // Remove feedback after 2 seconds
+    setTimeout(() => {
+      if (feedbackDiv && feedbackDiv.parentNode) {
+        feedbackDiv.parentNode.removeChild(feedbackDiv);
+      }
+    }, 2000);
     
     // Reinitialize scanner with new camera
     setTimeout(() => {
