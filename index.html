@@ -622,6 +622,28 @@ const GAS_ENDPOINT = url;</script>
       max-width: 50%;
       width: 50%;
     }
+    
+    /* Duplicate warning styles */
+    .duplicate-warning {
+      animation: duplicateAlert 3s ease-in-out;
+    }
+    
+    .potential-duplicate-warning {
+      animation: warningFadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes duplicateAlert {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+      25% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(244, 67, 54, 0.3); }
+      50% { transform: scale(1); box-shadow: 0 0 0 15px rgba(244, 67, 54, 0.1); }
+      75% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(244, 67, 54, 0.3); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+    }
+    
+    @keyframes warningFadeIn {
+      0% { opacity: 0; transform: translateY(-10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -637,6 +659,30 @@ const GAS_ENDPOINT = url;</script>
 <span class="instruction-box"><span>แสกน QR Code ตรงนี้</span></span>
 </div>
 <div class="active" id="qr-reader"></div>
+<div style="text-align:center; margin: 20px 0 10px 0; width: 100%;">
+<button onclick="toggleManualInput()" style="background: #90caf9; color: #222; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer;">
+ไม่สามารถใช้กล้องได้? ใส่ข้อมูลด้วยตนเอง
+</button>
+</div>
+<div id="manual-input" style="display: none; width: 100%; max-width: 400px; background: #f9f9f9; border-radius: 12px; padding: 20px; margin: 10px 0;">
+<h3 style="margin: 0 0 15px 0; text-align: center;">ใส่ข้อมูล QR Code</h3>
+<form onsubmit="processManualInput(event)">
+<label style="display: block; margin: 8px 0 4px 0;">Project Number:</label>
+<input type="text" id="manual-project" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+<label style="display: block; margin: 8px 0 4px 0;">Customer Name:</label>
+<input type="text" id="manual-customer" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+<label style="display: block; margin: 8px 0 4px 0;">Part Name:</label>
+<input type="text" id="manual-part" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+<label style="display: block; margin: 8px 0 4px 0;">Drawing Number:</label>
+<input type="text" id="manual-drawing" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+<label style="display: block; margin: 8px 0 4px 0;">Quantity Ordered:</label>
+<input type="number" id="manual-quantity" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;">
+<div style="text-align: center;">
+<button type="submit" style="background: #1976d2; color: white; border: none; border-radius: 6px; padding: 10px 20px; margin-right: 10px; cursor: pointer;">ยืนยัน</button>
+<button type="button" onclick="toggleManualInput()" style="background: #aaa; color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer;">ยกเลิก</button>
+</div>
+</form>
+</div>
 </div>
 </div>
 <!-- Job Info Screen -->
@@ -865,7 +911,11 @@ const GAS_ENDPOINT = url;</script>
       qrReader.classList.remove('active');
       if (qrReader.querySelector('.scan-line')) qrReader.querySelector('.scan-line').remove();
     }
-    if (id === 'start-form') fillJobInfo('start-job-info');
+    if (id === 'start-form') {
+      fillJobInfo('start-job-info');
+      // Check for potential duplicates when showing start form
+      checkAndWarnAboutPotentialDuplicates();
+    }
     if (id === 'stop-form') {
       fillJobInfo('stop-job-info');
       updateStopFormFields();
@@ -900,6 +950,20 @@ const GAS_ENDPOINT = url;</script>
     qrData = {};
     document.getElementById('start-form').reset();
     document.getElementById('stop-form').reset();
+    
+    // Reset manual input form
+    const manualInput = document.getElementById('manual-input');
+    if (manualInput) {
+      manualInput.style.display = 'none';
+      manualInput.querySelector('form').reset();
+    }
+    
+    // Reset QR reader display
+    const qrReader = document.getElementById('qr-reader');
+    if (qrReader) {
+      qrReader.style.display = '';
+    }
+    
     showScreen('scan-screen');
     if (window.qrScanner) {
       window.qrScanner.stop().catch(()=>{});
@@ -908,55 +972,146 @@ const GAS_ENDPOINT = url;</script>
   }
 
   function startScan() {
+    console.log('Starting QR scanner...');
     scanHandled = false;
     const qrReader = document.getElementById('qr-reader');
+    
+    if (!qrReader) {
+      console.error('QR reader element not found!');
+      alert('ไม่พบองค์ประกอบสแกน QR กรุณารีเฟรชหน้าเว็บ');
+      return;
+    }
+    
     qrReader.style.display = '';
     qrReader.style.border = '';
     qrReader.classList.add('active');
+    
     if (!qrReader.querySelector('.scan-line')) {
       const scanLine = document.createElement('div');
       scanLine.className = 'scan-line';
       qrReader.appendChild(scanLine);
     }
+    
     if (window.qrScanner) {
       window.qrScanner.stop().catch(()=>{});
       window.qrScanner = null;
     }
-    window.qrScanner = new Html5Qrcode("qr-reader");
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        window.qrScanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 320, height: 320 } },
-          qr => {
-            if (scanHandled) return;
-            try {
-              qrData = JSON.parse(qr);
-              qrReader.style.border = '4px solid #0f0';
-              scanHandled = true;
-              setTimeout(() => {
-                fillInfoScreen();
-                showScreen('info-screen');
-              }, 150);
-              window.qrScanner.stop();
-              window.qrScanner = null;
-            } catch {
-              qrReader.style.border = '4px solid #e00';
-              setTimeout(() => {
-                qrReader.style.border = '';
-              }, 500);
-              alert("QR format ผิดพลาด กรุณาลองใหม่");
+    
+    // Check if Html5Qrcode is available
+    if (typeof Html5Qrcode === 'undefined') {
+      console.error('Html5Qrcode library not loaded!');
+      alert('ไลบรารี QR Scanner ไม่ได้โหลด กรุณารีเฟรชหน้าเว็บ');
+      return;
+    }
+    
+    try {
+      window.qrScanner = new Html5Qrcode("qr-reader");
+      console.log('QR Scanner initialized');
+      
+      Html5Qrcode.getCameras().then(devices => {
+        console.log('Available cameras:', devices);
+        if (devices && devices.length) {
+          // Try to use back camera first, fallback to any available camera
+          const cameraId = devices.find(device => 
+            device.label && device.label.toLowerCase().includes('back')
+          )?.id || devices[0].id;
+          
+          console.log('Using camera:', cameraId);
+          
+          window.qrScanner.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 320, height: 320 } },
+            qr => {
+              console.log('QR Code detected:', qr);
+              if (scanHandled) return;
+              try {
+                qrData = JSON.parse(qr);
+                console.log('QR Data parsed successfully:', qrData);
+                qrReader.style.border = '4px solid #0f0';
+                scanHandled = true;
+                setTimeout(() => {
+                  fillInfoScreen();
+                  showScreen('info-screen');
+                }, 150);
+                window.qrScanner.stop();
+                window.qrScanner = null;
+              } catch (parseError) {
+                console.error('QR parse error:', parseError);
+                qrReader.style.border = '4px solid #e00';
+                setTimeout(() => {
+                  qrReader.style.border = '';
+                }, 500);
+                alert("QR format ผิดพลาด กรุณาลองใหม่");
+              }
+            },
+            errorMessage => {
+              // Parse errors are handled in success callback
+              console.log('QR Scanner error:', errorMessage);
             }
-          }
-        ).catch(err => {
-          alert("ไม่สามารถเริ่มกล้องได้: " + err);
-        });
-      } else {
-        alert("ไม่พบกล้อง");
+          ).catch(err => {
+            console.error('Camera start error:', err);
+            alert("ไม่สามารถเริ่มกล้องได้: " + err);
+          });
+        } else {
+          console.error('No cameras found');
+          alert("ไม่พบกล้อง กรุณาตรวจสอบการเชื่อมต่อกล้องและสิทธิ์การเข้าถึง");
+        }
+      }).catch(err => {
+        console.error('Get cameras error:', err);
+        alert("ไม่สามารถเข้าถึงกล้องได้: " + err + "\n\nกรุณาตรวจสอบ:\n1. อนุญาตให้เข้าถึงกล้อง\n2. ปิดแอปพลิเคชันอื่นที่ใช้กล้อง\n3. ใช้ HTTPS หรือ localhost");
+      });
+    } catch (initError) {
+      console.error('QR Scanner initialization error:', initError);
+      alert("ไม่สามารถเริ่มต้น QR Scanner ได้: " + initError);
+    }
+  }
+
+  // Toggle manual input form
+  function toggleManualInput() {
+    const manualInput = document.getElementById('manual-input');
+    const qrReader = document.getElementById('qr-reader');
+    if (manualInput.style.display === 'none') {
+      manualInput.style.display = 'block';
+      qrReader.style.display = 'none';
+      // Stop camera when switching to manual input
+      if (window.qrScanner) {
+        window.qrScanner.stop().catch(()=>{});
+        window.qrScanner = null;
       }
-    }).catch(err => {
-      alert("ไม่สามารถเข้าถึงกล้องได้: " + err);
-    });
+    } else {
+      manualInput.style.display = 'none';
+      qrReader.style.display = '';
+      // Restart camera when switching back to QR scan
+      setTimeout(() => startScan(), 100);
+    }
+  }
+
+  // Process manual input
+  function processManualInput(event) {
+    event.preventDefault();
+    try {
+      qrData = {
+        projectNo: document.getElementById('manual-project').value.trim(),
+        customerName: document.getElementById('manual-customer').value.trim(),
+        partName: document.getElementById('manual-part').value.trim(),
+        drawingNo: document.getElementById('manual-drawing').value.trim(),
+        quantityOrdered: document.getElementById('manual-quantity').value.trim()
+      };
+      
+      // Validate required fields
+      if (!qrData.projectNo || !qrData.customerName || !qrData.partName || 
+          !qrData.drawingNo || !qrData.quantityOrdered) {
+        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        return;
+      }
+      
+      console.log('Manual input data:', qrData);
+      fillInfoScreen();
+      showScreen('info-screen');
+    } catch (error) {
+      console.error('Manual input error:', error);
+      alert('เกิดข้อผิดพลาดในการประมวลผลข้อมูล');
+    }
   }
 
   // Show modal to select open job to pause
@@ -1311,6 +1466,146 @@ function closeOpenJobsSelector() {
     if (loader) loader.remove();
   }
 
+  // Check for duplicate job in currently displayed open jobs
+  function checkForDuplicateJob(data) {
+    if (!window._lastOpenJobs || window._lastOpenJobs.length === 0) {
+      return false;
+    }
+
+    // Normalize data for comparison
+    const normalizeStr = (str) => (str || '').toString().trim().toLowerCase();
+    const normalizeProjectNo = (str) => (str || '').toString().replace(/^0+/, '').trim().toLowerCase();
+
+    const duplicate = window._lastOpenJobs.find(job => {
+      return normalizeProjectNo(job.projectNo || '') === normalizeProjectNo(data.projectNo) &&
+             normalizeStr(job.partName || '') === normalizeStr(data.partName) &&
+             normalizeStr(job.processName || '') === normalizeStr(data.processName) &&
+             normalizeStr(job.processNo || '') === normalizeStr(data.processNo) &&
+             normalizeStr(job.stepNo || '') === normalizeStr(data.stepNo) &&
+             normalizeStr(job.machineNo || '') === normalizeStr(data.machineNo) &&
+             normalizeStr(job.status || '') === 'open';
+    });
+
+    if (duplicate) {
+      showDuplicateJobAlert(data);
+      return true;
+    }
+    return false;
+  }
+
+  // Show duplicate job alert with options
+  function showDuplicateJobAlert(data) {
+    const message = `พบงานที่เปิดอยู่แล้วในระบบ:\n\n` +
+                   `Project: ${qrData.projectNo}\n` +
+                   `Part Name: ${qrData.partName}\n` +
+                   `Process: ${data.processName} (${data.processNo})\n` +
+                   `Step: ${data.stepNo}\n` +
+                   `Machine: ${data.machineNo}\n\n` +
+                   `ไม่สามารถเริ่มงานใหม่ได้ กรุณา:\n` +
+                   `1. ตรวจสอบงานที่เปิดอยู่ในรายการด้านล่าง\n` +
+                   `2. ปิดงานเดิมก่อนเริ่มงานใหม่\n` +
+                   `3. หรือตรวจสอบข้อมูลที่ใส่ว่าถูกต้อง`;
+    
+    alert(message);
+    
+    // Highlight the duplicate job in the open jobs table if visible
+    highlightDuplicateInTable(data);
+  }
+
+  // Highlight duplicate job in the open jobs table
+  function highlightDuplicateInTable(data) {
+    const container = document.getElementById('open-jobs-table');
+    if (!container) return;
+
+    // Add a warning message above the table
+    const existingWarning = container.querySelector('.duplicate-warning');
+    if (!existingWarning) {
+      const warningDiv = document.createElement('div');
+      warningDiv.className = 'duplicate-warning';
+      warningDiv.style.cssText = `
+        background: #ffebee; 
+        border: 2px solid #f44336; 
+        border-radius: 8px; 
+        padding: 12px; 
+        margin: 10px 0; 
+        color: #d32f2f; 
+        font-weight: bold;
+        animation: pulse 2s infinite;
+      `;
+      warningDiv.innerHTML = `⚠️ พบงานที่ซ้ำกันในรายการด้านล่าง: ${data.processName} (${data.processNo}) - Step ${data.stepNo} - ${data.machineNo}`;
+      
+      // Add pulsing animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes pulse {
+          0% { background-color: #ffebee; }
+          50% { background-color: #ffcdd2; }
+          100% { background-color: #ffebee; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      container.insertBefore(warningDiv, container.firstChild);
+      
+      // Remove warning after 10 seconds
+      setTimeout(() => {
+        if (warningDiv.parentNode) {
+          warningDiv.parentNode.removeChild(warningDiv);
+        }
+      }, 10000);
+    }
+  }
+
+  // Check and warn about potential duplicates when showing start form
+  function checkAndWarnAboutPotentialDuplicates() {
+    if (!window._lastOpenJobs || window._lastOpenJobs.length === 0) {
+      return;
+    }
+
+    // Check if there are any open jobs for this project/part combination
+    const normalizeStr = (str) => (str || '').toString().trim().toLowerCase();
+    const normalizeProjectNo = (str) => (str || '').toString().replace(/^0+/, '').trim().toLowerCase();
+
+    const potentialDuplicates = window._lastOpenJobs.filter(job => {
+      return normalizeProjectNo(job.projectNo || '') === normalizeProjectNo(qrData.projectNo) &&
+             normalizeStr(job.partName || '') === normalizeStr(qrData.partName) &&
+             normalizeStr(job.status || '') === 'open';
+    });
+
+    if (potentialDuplicates.length > 0) {
+      // Show warning message in the start form
+      const startForm = document.getElementById('start-form');
+      if (startForm) {
+        let warningDiv = startForm.querySelector('.potential-duplicate-warning');
+        if (!warningDiv) {
+          warningDiv = document.createElement('div');
+          warningDiv.className = 'potential-duplicate-warning';
+          warningDiv.style.cssText = `
+            background: #fff3e0; 
+            border: 2px solid #ff9800; 
+            border-radius: 8px; 
+            padding: 12px; 
+            margin: 15px 0; 
+            color: #f57c00; 
+            font-weight: bold;
+          `;
+          warningDiv.innerHTML = `
+            ⚠️ <strong>คำเตือน:</strong> พบงานที่เปิดอยู่แล้ว ${potentialDuplicates.length} งาน สำหรับโปรเจคและชิ้นงานนี้<br>
+            <small>กรุณาตรวจสอบให้แน่ใจว่าข้อมูลที่จะใส่ไม่ซ้ำกับงานที่เปิดอยู่</small>
+          `;
+          
+          // Insert after the job info section
+          const jobInfoDiv = startForm.querySelector('#start-job-info');
+          if (jobInfoDiv && jobInfoDiv.nextSibling) {
+            startForm.insertBefore(warningDiv, jobInfoDiv.nextSibling);
+          } else {
+            startForm.insertBefore(warningDiv, startForm.querySelector('label'));
+          }
+        }
+      }
+    }
+  }
+
   function updateStopFormFields() {
     const stopForm = document.getElementById('stop-form');
     if (!stopForm) return;
@@ -1514,7 +1809,7 @@ function closeOpenJobsSelector() {
     event.preventDefault();
     if (window.isSubmitting) return;
     window.isSubmitting = true;
-    showScreen('loading-screen');
+    
     const form = document.getElementById('start-form');
     const formData = new FormData(form);
     const data = {
@@ -1526,6 +1821,14 @@ function closeOpenJobsSelector() {
       employeeCode: formData.get('employeeCode'),
       status: 'OPEN'
     };
+
+    // Check for duplicate before submitting
+    if (checkForDuplicateJob(data)) {
+      window.isSubmitting = false;
+      return;
+    }
+
+    showScreen('loading-screen');
     const GAS_ENDPOINT = url;
     fetch(GAS_ENDPOINT, {
       method: "POST",
@@ -1537,9 +1840,23 @@ function closeOpenJobsSelector() {
     .then(text => {
       window.isSubmitting = false;
       if (text.trim().startsWith("ERROR:")) {
-        alert(text.trim().replace("ERROR: ", ""));
+        const errorMsg = text.trim().replace("ERROR: ", "");
+        // Check if it's a duplicate job error
+        if (errorMsg.includes("ซ้ำกัน") || errorMsg.includes("duplicate") || errorMsg.includes("DUPLICATE")) {
+          showDuplicateJobAlert(data);
+        } else {
+          alert(errorMsg);
+        }
         showScreen('info-screen');
       } else {
+        // Optimistically update the open jobs list
+        optimisticUpdateOpenJobs({type: 'add', job: {
+          processName: data.processName,
+          processNo: data.processNo,
+          stepNo: data.stepNo,
+          machineNo: data.machineNo,
+          status: 'OPEN'
+        }});
         showScreen('confirm-screen');
       }
     })
