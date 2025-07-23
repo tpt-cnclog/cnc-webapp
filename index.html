@@ -1121,13 +1121,71 @@ const GAS_ENDPOINT = url;</script>
         console.log('Available cameras:', devices);
         console.log('Number of cameras found:', devices.length);
         
+        // Helper functions to identify camera types
+        function isMainBackCamera(label) {
+          // Main back camera indicators (these suggest it's the default camera)
+          const mainIndicators = [
+            'back',
+            'rear', 
+            'environment',
+            'camera 0',
+            'main',
+            'primary'
+          ];
+          
+          // Secondary camera indicators (these suggest it's NOT the main camera)
+          const secondaryIndicators = [
+            'wide',
+            'ultra',
+            'telephoto', 
+            'zoom',
+            'macro',
+            'depth',
+            '2x',
+            '3x',
+            '5x',
+            '10x',
+            'periscope',
+            'portrait'
+          ];
+          
+          // Check if it contains main indicators
+          const hasMainIndicator = mainIndicators.some(indicator => label.includes(indicator));
+          
+          // Check if it contains secondary indicators  
+          const hasSecondaryIndicator = secondaryIndicators.some(indicator => label.includes(indicator));
+          
+          // It's a main back camera if it has main indicators and NO secondary indicators
+          return hasMainIndicator && !hasSecondaryIndicator;
+        }
+        
+        function isSecondaryBackCamera(label) {
+          const secondaryIndicators = [
+            'wide',
+            'ultra', 
+            'telephoto',
+            'zoom',
+            'macro',
+            'depth',
+            '2x',
+            '3x', 
+            '5x',
+            '10x',
+            'periscope',
+            'portrait'
+          ];
+          
+          return secondaryIndicators.some(indicator => label.includes(indicator));
+        }
+        
         // Log detailed camera information
         devices.forEach((device, index) => {
           console.log(`Camera ${index}:`, {
             id: device.id,
             label: device.label,
             isFront: device.label && device.label.toLowerCase().includes('front'),
-            isBack: device.label && (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear'))
+            isMainBack: isMainBackCamera((device.label || '').toLowerCase()),
+            isSecondaryBack: isSecondaryBackCamera((device.label || '').toLowerCase())
           });
         });
         
@@ -1143,27 +1201,75 @@ const GAS_ENDPOINT = url;</script>
               id: device.id,
               label: device.label,
               isFront: label.includes('front') || label.includes('user'),
-              isBack: label.includes('back') || label.includes('rear') || label.includes('environment')
+              isMainBack: isMainBackCamera(label),
+              isSecondaryBack: isSecondaryBackCamera(label)
             });
             
-            // Identify front camera
-            if (label.includes('front') || label.includes('user')) {
-              frontCamera = { ...device, originalIndex: index, type: 'front' };
-            }
-            // Identify back camera
-            else if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
-              backCamera = { ...device, originalIndex: index, type: 'back' };
-            }
-            // If no explicit labeling, use heuristics
-            else if (!frontCamera && !backCamera) {
-              // On mobile, first camera is often front, last is often back
-              if (index === 0 && devices.length > 1) {
+            // Identify front camera (user-facing)
+            if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
+              if (!frontCamera) { // Take the first front camera found
                 frontCamera = { ...device, originalIndex: index, type: 'front' };
-              } else if (index === devices.length - 1) {
+                console.log('Found front camera:', frontCamera);
+              }
+            }
+            // Identify MAIN back camera (default camera, not zoom/wide/macro)
+            else if (isMainBackCamera(label)) {
+              if (!backCamera) { // Take the first main back camera found
                 backCamera = { ...device, originalIndex: index, type: 'back' };
+                console.log('Found main back camera:', backCamera);
               }
             }
           });
+          
+          // If we didn't find a main back camera explicitly, use fallback logic
+          if (!backCamera) {
+            console.log('No main back camera found explicitly, using fallback logic...');
+            
+            // Look for any back camera that's NOT explicitly a special type
+            for (let i = 0; i < devices.length; i++) {
+              const device = devices[i];
+              const label = (device.label || '').toLowerCase();
+              
+              // Skip front cameras
+              if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
+                continue;
+              }
+              
+            // Skip obvious secondary cameras
+            if (isSecondaryBackCamera(label)) {
+              continue;
+            }              // This should be the main back camera
+              backCamera = { ...device, originalIndex: i, type: 'back' };
+              console.log('Found back camera using fallback:', backCamera);
+              break;
+            }
+          }
+          
+          // Final fallback: use position-based heuristics
+          if (!frontCamera || !backCamera) {
+            console.log('Using position-based fallback for missing cameras...');
+            
+            if (!frontCamera && devices.length > 0) {
+              // First camera is often front camera
+              frontCamera = { ...devices[0], originalIndex: 0, type: 'front' };
+              console.log('Position-based front camera:', frontCamera);
+            }
+            
+            if (!backCamera && devices.length > 1) {
+              // Find the most likely main back camera (usually not the last one on modern phones)
+              let backIndex = 1; // Start with second camera
+              
+              // If we have 3+ cameras, the main back is usually index 1, not the last
+              if (devices.length >= 3) {
+                backIndex = 1;
+              } else {
+                backIndex = devices.length - 1;
+              }
+              
+              backCamera = { ...devices[backIndex], originalIndex: backIndex, type: 'back' };
+              console.log('Position-based back camera:', backCamera);
+            }
+          }
           
           // Build filtered camera array with only front and back cameras
           if (backCamera) {
