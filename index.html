@@ -1124,19 +1124,23 @@ const GAS_ENDPOINT = url;</script>
           window.currentCameraIndex = 0;
           
           // Try to find back camera first (multiple methods)
-          let backCameraIndex = devices.findIndex(device => 
-            device.label && (
-              device.label.toLowerCase().includes('back') ||
-              device.label.toLowerCase().includes('rear') ||
-              device.label.toLowerCase().includes('environment') ||
-              device.label.toLowerCase().includes('camera 0') ||
-              !device.label.toLowerCase().includes('front')
-            )
-          );
+          let backCameraIndex = devices.findIndex(device => {
+            const label = (device.label || '').toLowerCase();
+            console.log('Checking camera:', device.label, 'for back camera indicators');
+            
+            return label.includes('back') ||
+                   label.includes('rear') ||
+                   label.includes('environment') ||
+                   label.includes('camera 0') ||
+                   (label.includes('camera') && !label.includes('front'));
+          });
           
-          // If still no back camera found, use the last camera (often back camera)
+          console.log('Back camera index found:', backCameraIndex);
+          
+          // If still no back camera found, use the last camera (often back camera on mobile)
           if (backCameraIndex === -1 && devices.length > 1) {
             backCameraIndex = devices.length - 1;
+            console.log('No explicit back camera found, using last camera:', backCameraIndex);
           }
           
           // Use back camera if found, otherwise use first camera
@@ -1179,17 +1183,26 @@ const GAS_ENDPOINT = url;</script>
 
   // Start camera with specific ID
   function startCameraWithId(cameraId) {
-    if (!window.qrScanner) return;
+    console.log('startCameraWithId called with:', cameraId);
+    
+    if (!window.qrScanner) {
+      console.error('QR Scanner not initialized');
+      return;
+    }
+    
+    const config = { 
+      fps: 10, 
+      qrbox: { width: 320, height: 320 },
+      aspectRatio: 1.0,
+      disableFlip: false,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    };
+    
+    console.log('Starting camera with config:', config);
     
     window.qrScanner.start(
       cameraId,
-      { 
-        fps: 10, 
-        qrbox: { width: 320, height: 320 },
-        aspectRatio: 1.0,
-        disableFlip: false,
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-      },
+      config,
       qr => {
         console.log('QR Code detected:', qr);
         if (scanHandled) return;
@@ -1253,7 +1266,26 @@ const GAS_ENDPOINT = url;</script>
       }
     ).catch(err => {
       console.error('Camera start error:', err);
-      alert("ไม่สามารถเริ่มกล้องได้: " + err);
+      console.error('Error details:', err.message || err);
+      
+      // Try to provide more specific error messages
+      let errorMessage = "ไม่สามารถเริ่มกล้องได้: " + (err.message || err);
+      
+      if (err.message && err.message.includes('Permission')) {
+        errorMessage = "ไม่ได้รับอนุญาตให้เข้าถึงกล้อง กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์";
+      } else if (err.message && err.message.includes('NotFoundError')) {
+        errorMessage = "ไม่พบกล้องที่เลือก กำลังลองกล้องอื่น...";
+        
+        // Try to switch to next available camera if this one fails
+        if (window.availableCameras && window.availableCameras.length > 1) {
+          setTimeout(() => {
+            switchCamera();
+          }, 1000);
+          return;
+        }
+      }
+      
+      alert(errorMessage);
     });
   }
 
@@ -1277,6 +1309,8 @@ const GAS_ENDPOINT = url;</script>
     const switchButton = document.createElement('button');
     switchButton.className = 'camera-switch-btn';
     switchButton.innerHTML = '<i class="fas fa-sync-alt"></i><span style="display:none;">🔄</span>';
+    switchButton.title = 'Switch Camera'; // Add tooltip
+    
     // Fallback if FontAwesome doesn't load
     setTimeout(() => {
       if (switchButton.querySelector('i').offsetHeight === 0) {
@@ -1312,34 +1346,83 @@ const GAS_ENDPOINT = url;</script>
     
     qrReader.appendChild(switchButton);
     console.log('Camera switch button added successfully');
+    
+    // Update button tooltip with current camera info
+    updateCameraSwitchButton();
+  }
+
+  function updateCameraSwitchButton() {
+    const switchButton = document.querySelector('.camera-switch-btn');
+    if (switchButton && window.availableCameras && window.currentCameraIndex !== undefined) {
+      const currentCamera = window.availableCameras[window.currentCameraIndex];
+      const cameraName = currentCamera.label || `Camera ${window.currentCameraIndex + 1}`;
+      const cameraType = cameraName.toLowerCase().includes('front') ? 'Front' : 
+                        cameraName.toLowerCase().includes('back') ? 'Back' : 
+                        cameraName.toLowerCase().includes('rear') ? 'Back' : 'Camera';
+      
+      switchButton.title = `Current: ${cameraType} Camera - Click to switch`;
+      console.log('Updated camera switch button tooltip:', switchButton.title);
+    }
   }
 
   // Switch to next available camera
   function switchCamera() {
-    if (!window.availableCameras || window.availableCameras.length <= 1) return;
+    console.log('switchCamera() called');
+    console.log('Available cameras:', window.availableCameras);
+    console.log('Current camera index:', window.currentCameraIndex);
+    
+    if (!window.availableCameras || window.availableCameras.length <= 1) {
+      console.log('No cameras to switch to');
+      return;
+    }
     
     // Stop current scanner
     if (window.qrScanner) {
-      window.qrScanner.stop().catch(() => {});
-      window.qrScanner = null;
+      console.log('Stopping current scanner...');
+      window.qrScanner.stop().then(() => {
+        console.log('Scanner stopped successfully');
+        // Clear the scanner
+        window.qrScanner.clear().then(() => {
+          console.log('Scanner cleared successfully');
+          window.qrScanner = null;
+          performCameraSwitch();
+        }).catch(err => {
+          console.log('Scanner clear failed, proceeding anyway:', err);
+          window.qrScanner = null;
+          performCameraSwitch();
+        });
+      }).catch(err => {
+        console.log('Scanner stop failed, proceeding anyway:', err);
+        window.qrScanner = null;
+        performCameraSwitch();
+      });
+    } else {
+      performCameraSwitch();
     }
-    
+  }
+
+  function performCameraSwitch() {
     // Move to next camera
+    const oldIndex = window.currentCameraIndex;
     window.currentCameraIndex = (window.currentCameraIndex + 1) % window.availableCameras.length;
     const nextCamera = window.availableCameras[window.currentCameraIndex];
     
-    console.log('Switching to camera:', nextCamera);
+    console.log('Switching from camera', oldIndex, 'to camera', window.currentCameraIndex);
+    console.log('Next camera:', nextCamera);
     
     // Reinitialize scanner with new camera
     setTimeout(() => {
       try {
+        console.log('Creating new Html5Qrcode instance...');
         window.qrScanner = new Html5Qrcode("qr-reader");
         startCameraWithId(nextCamera.id);
+        // Update button tooltip
+        updateCameraSwitchButton();
       } catch (error) {
         console.error('Error switching camera:', error);
         alert('ไม่สามารถเปลี่ยนกล้องได้: ' + error.message);
       }
-    }, 100);
+    }, 500); // Increased delay to ensure cleanup is complete
   }
 
   // Try to parse QR code in alternative formats
