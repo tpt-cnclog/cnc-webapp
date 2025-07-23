@@ -9,6 +9,14 @@ const GAS_ENDPOINT = url;</script>
   </title>
 <link href="JOBLOG LOGO.png" rel="icon" type="image/png"/>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+  // Initialize mobile console for debugging on mobile devices
+  if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    eruda.init();
+    console.log('Mobile console initialized - tap the console button in bottom right');
+  }
+</script>
 <link href="https://fonts.googleapis.com/css?family=Sarabun:400,700&amp;display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
 <style>
@@ -1123,25 +1131,36 @@ const GAS_ENDPOINT = url;</script>
         
         // Helper functions to identify camera types
         function isMainBackCamera(label) {
-          // Main back camera indicators (these suggest it's the default camera)
+          const lowerLabel = label.toLowerCase();
+          
+          // iPhone-specific detection: "wide" is the main 1x camera
+          if (lowerLabel.includes('wide') && !lowerLabel.includes('ultra')) {
+            console.log('Detected iPhone main camera (wide, not ultra wide):', label);
+            return true;
+          }
+          
+          // General main back camera indicators
           const mainIndicators = [
             'back',
             'rear', 
             'environment',
             'camera 0',
             'main',
-            'primary'
+            'primary',
+            '1x'  // Added 1x zoom indicator
           ];
           
-          // Secondary camera indicators (these suggest it's NOT the main camera)
+          // Secondary camera indicators (cameras we want to avoid)
           const secondaryIndicators = [
-            'wide',
-            'ultra',
-            'telephoto', 
+            'ultra wide',    // iPhone ultra wide (0.5x)
+            'ultra-wide',    
+            'ultrawide',
+            'telephoto',     // iPhone telephoto (2x, 3x)
             'zoom',
             'macro',
             'depth',
-            '2x',
+            '0.5x',          // Ultra wide zoom level
+            '2x',            // Telephoto zoom levels
             '3x',
             '5x',
             '10x',
@@ -1149,43 +1168,71 @@ const GAS_ENDPOINT = url;</script>
             'portrait'
           ];
           
+          // Check for secondary indicators first (more specific)
+          const hasSecondaryIndicator = secondaryIndicators.some(indicator => lowerLabel.includes(indicator));
+          if (hasSecondaryIndicator) {
+            console.log('Camera rejected as secondary:', label);
+            return false;
+          }
+          
           // Check if it contains main indicators
-          const hasMainIndicator = mainIndicators.some(indicator => label.includes(indicator));
+          const hasMainIndicator = mainIndicators.some(indicator => lowerLabel.includes(indicator));
           
-          // Check if it contains secondary indicators  
-          const hasSecondaryIndicator = secondaryIndicators.some(indicator => label.includes(indicator));
+          if (hasMainIndicator) {
+            console.log('Camera identified as main by indicator:', label);
+            return true;
+          }
           
-          // It's a main back camera if it has main indicators and NO secondary indicators
-          return hasMainIndicator && !hasSecondaryIndicator;
+          // If no explicit indicators, it might still be main camera
+          // (some devices don't label clearly)
+          console.log('Camera has no clear indicators:', label);
+          return false;
         }
         
         function isSecondaryBackCamera(label) {
+          const lowerLabel = label.toLowerCase();
+          
           const secondaryIndicators = [
-            'wide',
-            'ultra', 
-            'telephoto',
+            'ultra wide',    // iPhone ultra wide (0.5x) - most specific first
+            'ultra-wide',    
+            'ultrawide',
+            'telephoto',     // iPhone telephoto cameras
             'zoom',
             'macro',
             'depth',
-            '2x',
-            '3x', 
+            '0.5x',          // Ultra wide zoom level
+            '2x',            // Telephoto zoom levels  
+            '3x',
             '5x',
             '10x',
             'periscope',
             'portrait'
           ];
           
-          return secondaryIndicators.some(indicator => label.includes(indicator));
+          const isSecondary = secondaryIndicators.some(indicator => lowerLabel.includes(indicator));
+          
+          if (isSecondary) {
+            console.log('Camera identified as secondary:', label);
+          }
+          
+          return isSecondary;
         }
         
         // Log detailed camera information
         devices.forEach((device, index) => {
+          const label = (device.label || '').toLowerCase();
           console.log(`Camera ${index}:`, {
             id: device.id,
             label: device.label,
-            isFront: device.label && device.label.toLowerCase().includes('front'),
-            isMainBack: isMainBackCamera((device.label || '').toLowerCase()),
-            isSecondaryBack: isSecondaryBackCamera((device.label || '').toLowerCase())
+            isFront: label.includes('front') || label.includes('user'),
+            isMainBack: isMainBackCamera(label),
+            isSecondaryBack: isSecondaryBackCamera(label),
+            // iPhone-specific checks
+            isWide: label.includes('wide'),
+            isUltraWide: label.includes('ultra'),
+            isTelephoto: label.includes('telephoto'),
+            // Additional zoom indicators
+            hasZoomLevel: label.includes('0.5x') || label.includes('1x') || label.includes('2x') || label.includes('3x')
           });
         });
         
@@ -1225,7 +1272,7 @@ const GAS_ENDPOINT = url;</script>
           if (!backCamera) {
             console.log('No main back camera found explicitly, using fallback logic...');
             
-            // Look for any back camera that's NOT explicitly a special type
+            // iPhone-specific fallback: look for "wide" camera (but not "ultra wide")
             for (let i = 0; i < devices.length; i++) {
               const device = devices[i];
               const label = (device.label || '').toLowerCase();
@@ -1235,13 +1282,35 @@ const GAS_ENDPOINT = url;</script>
                 continue;
               }
               
-            // Skip obvious secondary cameras
-            if (isSecondaryBackCamera(label)) {
-              continue;
-            }              // This should be the main back camera
-              backCamera = { ...device, originalIndex: i, type: 'back' };
-              console.log('Found back camera using fallback:', backCamera);
-              break;
+              // iPhone: Look specifically for "wide" but not "ultra wide"
+              if (label.includes('wide') && !label.includes('ultra')) {
+                backCamera = { ...device, originalIndex: i, type: 'back' };
+                console.log('Found iPhone main camera (wide, not ultra):', backCamera);
+                break;
+              }
+            }
+            
+            // If still no camera, look for any back camera that's NOT explicitly secondary
+            if (!backCamera) {
+              for (let i = 0; i < devices.length; i++) {
+                const device = devices[i];
+                const label = (device.label || '').toLowerCase();
+                
+                // Skip front cameras
+                if (label.includes('front') || label.includes('user') || label.includes('selfie')) {
+                  continue;
+                }
+                
+                // Skip obvious secondary cameras
+                if (isSecondaryBackCamera(label)) {
+                  continue;
+                }
+                
+                // This should be the main back camera
+                backCamera = { ...device, originalIndex: i, type: 'back' };
+                console.log('Found back camera using general fallback:', backCamera);
+                break;
+              }
             }
           }
           
