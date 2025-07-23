@@ -1009,6 +1009,9 @@ const GAS_ENDPOINT = url;</script>
       document.getElementById('stop-job-info').innerHTML = '';
       document.getElementById('job-info').innerHTML = '';
     } else {
+      // Stop button monitoring when leaving scan screen
+      stopButtonMonitoring();
+      
       if (window.qrScanner) {
         window.qrScanner.stop().catch(()=>{});
         window.qrScanner = null;
@@ -1118,6 +1121,16 @@ const GAS_ENDPOINT = url;</script>
         console.log('Available cameras:', devices);
         console.log('Number of cameras found:', devices.length);
         
+        // Log detailed camera information
+        devices.forEach((device, index) => {
+          console.log(`Camera ${index}:`, {
+            id: device.id,
+            label: device.label,
+            isFront: device.label && device.label.toLowerCase().includes('front'),
+            isBack: device.label && (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear'))
+          });
+        });
+        
         if (devices && devices.length) {
           // Store cameras globally for switching
           window.availableCameras = devices;
@@ -1150,6 +1163,7 @@ const GAS_ENDPOINT = url;</script>
           
           const selectedCamera = devices[window.currentCameraIndex];
           console.log('Using camera:', selectedCamera);
+          console.log('Selected camera index:', window.currentCameraIndex);
           
           // Add camera switch button if multiple cameras available
           console.log('Checking if should add camera switch button. Cameras found:', devices.length);
@@ -1299,6 +1313,12 @@ const GAS_ENDPOINT = url;</script>
       return;
     }
     
+    // Only add button if we have multiple cameras
+    if (!window.availableCameras || window.availableCameras.length <= 1) {
+      console.log('Not adding switch button - only one camera available');
+      return;
+    }
+    
     // Remove existing button if any
     const existingButton = qrReader.querySelector('.camera-switch-btn');
     if (existingButton) {
@@ -1341,7 +1361,18 @@ const GAS_ENDPOINT = url;</script>
       e.preventDefault();
       e.stopPropagation();
       console.log('Camera switch button clicked');
+      
+      // Disable button temporarily to prevent multiple clicks
+      switchButton.disabled = true;
+      switchButton.style.opacity = '0.5';
+      
       switchCamera();
+      
+      // Re-enable button after switching
+      setTimeout(() => {
+        switchButton.disabled = false;
+        switchButton.style.opacity = '1';
+      }, 2000);
     };
     
     qrReader.appendChild(switchButton);
@@ -1349,6 +1380,39 @@ const GAS_ENDPOINT = url;</script>
     
     // Update button tooltip with current camera info
     updateCameraSwitchButton();
+    
+    // Monitor button and re-add if it disappears
+    startButtonMonitoring();
+  }
+
+  // Monitor the camera switch button and re-add if it disappears
+  function startButtonMonitoring() {
+    if (window.buttonMonitorInterval) {
+      clearInterval(window.buttonMonitorInterval);
+    }
+    
+    window.buttonMonitorInterval = setInterval(() => {
+      const qrReader = document.getElementById('qr-reader');
+      const switchButton = qrReader ? qrReader.querySelector('.camera-switch-btn') : null;
+      
+      // If QR reader exists, has multiple cameras, but no button, re-add it
+      if (qrReader && 
+          qrReader.style.display !== 'none' && 
+          window.availableCameras && 
+          window.availableCameras.length > 1 && 
+          !switchButton) {
+        console.log('Camera switch button disappeared, re-adding...');
+        addCameraSwitchButton();
+      }
+    }, 2000); // Check every 2 seconds
+  }
+
+  // Stop button monitoring
+  function stopButtonMonitoring() {
+    if (window.buttonMonitorInterval) {
+      clearInterval(window.buttonMonitorInterval);
+      window.buttonMonitorInterval = null;
+    }
   }
 
   function updateCameraSwitchButton() {
@@ -1415,12 +1479,23 @@ const GAS_ENDPOINT = url;</script>
       try {
         console.log('Creating new Html5Qrcode instance...');
         window.qrScanner = new Html5Qrcode("qr-reader");
+        
+        // Start the new camera
         startCameraWithId(nextCamera.id);
-        // Update button tooltip
-        updateCameraSwitchButton();
+        
+        // Re-add the camera switch button after a short delay to ensure camera is started
+        setTimeout(() => {
+          addCameraSwitchButton();
+        }, 1000);
+        
       } catch (error) {
         console.error('Error switching camera:', error);
         alert('ไม่สามารถเปลี่ยนกล้องได้: ' + error.message);
+        
+        // Re-add button even if there's an error
+        setTimeout(() => {
+          addCameraSwitchButton();
+        }, 1000);
       }
     }, 500); // Increased delay to ensure cleanup is complete
   }
