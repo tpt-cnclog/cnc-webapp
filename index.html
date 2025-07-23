@@ -676,8 +676,8 @@ const GAS_ENDPOINT = url;</script>
   gap: 8px;
 " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(25, 118, 210, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(25, 118, 210, 0.3)'">
 <i class="fas fa-keyboard" style="font-size: 1.1em;"></i>
-<span>ไม่สามารถใช้กล้องได้? ใส่ข้อมูลด้วยตนเอง</span>
-<span>กดตรงนี้</span>
+<span>ไม่สามารถใช้กล้องได้? ใส่ข้อมูลด้วยตนเอง
+</span>
 </button>
 </div>
 <div id="manual-input" style="
@@ -1116,48 +1116,53 @@ const GAS_ENDPOINT = url;</script>
       
       Html5Qrcode.getCameras().then(devices => {
         console.log('Available cameras:', devices);
+        console.log('Number of cameras found:', devices.length);
+        
         if (devices && devices.length) {
-          // Try to use back camera first, fallback to any available camera
-          const cameraId = devices.find(device => 
-            device.label && device.label.toLowerCase().includes('back')
-          )?.id || devices[0].id;
+          // Store cameras globally for switching
+          window.availableCameras = devices;
+          window.currentCameraIndex = 0;
           
-          console.log('Using camera:', cameraId);
+          // Try to find back camera first (multiple methods)
+          let backCameraIndex = devices.findIndex(device => 
+            device.label && (
+              device.label.toLowerCase().includes('back') ||
+              device.label.toLowerCase().includes('rear') ||
+              device.label.toLowerCase().includes('environment') ||
+              device.label.toLowerCase().includes('camera 0') ||
+              !device.label.toLowerCase().includes('front')
+            )
+          );
           
-          window.qrScanner.start(
-            cameraId,
-            { fps: 10, qrbox: { width: 320, height: 320 } },
-            qr => {
-              console.log('QR Code detected:', qr);
-              if (scanHandled) return;
-              try {
-                qrData = JSON.parse(qr);
-                console.log('QR Data parsed successfully:', qrData);
-                qrReader.style.border = '4px solid #0f0';
-                scanHandled = true;
-                setTimeout(() => {
-                  fillInfoScreen();
-                  showScreen('info-screen');
-                }, 150);
-                window.qrScanner.stop();
-                window.qrScanner = null;
-              } catch (parseError) {
-                console.error('QR parse error:', parseError);
-                qrReader.style.border = '4px solid #e00';
-                setTimeout(() => {
-                  qrReader.style.border = '';
-                }, 500);
-                alert("QR format ผิดพลาด กรุณาลองใหม่");
-              }
-            },
-            errorMessage => {
-              // Parse errors are handled in success callback
-              console.log('QR Scanner error:', errorMessage);
-            }
-          ).catch(err => {
-            console.error('Camera start error:', err);
-            alert("ไม่สามารถเริ่มกล้องได้: " + err);
-          });
+          // If still no back camera found, use the last camera (often back camera)
+          if (backCameraIndex === -1 && devices.length > 1) {
+            backCameraIndex = devices.length - 1;
+          }
+          
+          // Use back camera if found, otherwise use first camera
+          if (backCameraIndex !== -1) {
+            window.currentCameraIndex = backCameraIndex;
+          }
+          
+          const selectedCamera = devices[window.currentCameraIndex];
+          console.log('Using camera:', selectedCamera);
+          
+          // Add camera switch button if multiple cameras available
+          console.log('Checking if should add camera switch button. Cameras found:', devices.length);
+          if (devices.length > 1) {
+            console.log('Multiple cameras detected, adding switch button...');
+            addCameraSwitchButton();
+          } else {
+            console.log('Only one camera found, no switch button needed');
+          }
+          
+          // Temporary: Always add the button for testing
+          console.log('Adding camera switch button for testing...');
+          setTimeout(() => {
+            addCameraSwitchButton();
+          }, 1000);
+          
+          startCameraWithId(selectedCamera.id);
         } else {
           console.error('No cameras found');
           alert("ไม่พบกล้อง กรุณาตรวจสอบการเชื่อมต่อกล้องและสิทธิ์การเข้าถึง");
@@ -1169,6 +1174,264 @@ const GAS_ENDPOINT = url;</script>
     } catch (initError) {
       console.error('QR Scanner initialization error:', initError);
       alert("ไม่สามารถเริ่มต้น QR Scanner ได้: " + initError);
+    }
+  }
+
+  // Start camera with specific ID
+  function startCameraWithId(cameraId) {
+    if (!window.qrScanner) return;
+    
+    window.qrScanner.start(
+      cameraId,
+      { 
+        fps: 10, 
+        qrbox: { width: 320, height: 320 },
+        aspectRatio: 1.0,
+        disableFlip: false,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+      },
+      qr => {
+        console.log('QR Code detected:', qr);
+        if (scanHandled) return;
+        
+        // Try to parse as JSON first
+        try {
+          qrData = JSON.parse(qr);
+          console.log('QR Data parsed successfully as JSON:', qrData);
+          
+          // Validate required fields
+          if (!qrData.projectNo || !qrData.customerName || !qrData.partName || 
+              !qrData.drawingNo || !qrData.quantityOrdered) {
+            throw new Error('Missing required fields in QR data');
+          }
+          
+          const qrReader = document.getElementById('qr-reader');
+          qrReader.style.border = '4px solid #0f0';
+          scanHandled = true;
+          setTimeout(() => {
+            fillInfoScreen();
+            showScreen('info-screen');
+          }, 150);
+          window.qrScanner.stop();
+          window.qrScanner = null;
+          
+        } catch (parseError) {
+          console.log('JSON parse failed, trying alternative formats:', parseError);
+          
+          // Try to parse as simple text format (comma-separated or other formats)
+          if (tryAlternativeFormats(qr)) {
+            const qrReader = document.getElementById('qr-reader');
+            qrReader.style.border = '4px solid #0f0';
+            scanHandled = true;
+            setTimeout(() => {
+              fillInfoScreen();
+              showScreen('info-screen');
+            }, 150);
+            window.qrScanner.stop();
+            window.qrScanner = null;
+          } else {
+            console.error('All QR parse attempts failed:', parseError);
+            const qrReader = document.getElementById('qr-reader');
+            qrReader.style.border = '4px solid #e00';
+            setTimeout(() => {
+              qrReader.style.border = '';
+            }, 1000);
+            
+            // Show more helpful error message
+            const errorMsg = `QR Code ไม่สามารถอ่านได้\n\nข้อมูลที่สแกนได้: ${qr.substring(0, 100)}${qr.length > 100 ? '...' : ''}\n\nกรุณาลองใหม่หรือใช้การใส่ข้อมูลด้วยตนเอง`;
+            alert(errorMsg);
+          }
+        }
+      },
+      errorMessage => {
+        // Handle scanning errors more gracefully
+        if (errorMessage && !errorMessage.includes('NotFoundException') && 
+            !errorMessage.includes('No MultiFormat Readers')) {
+          console.log('QR Scanner error:', errorMessage);
+        }
+        // Don't show alerts for common scanning errors that occur during normal operation
+      }
+    ).catch(err => {
+      console.error('Camera start error:', err);
+      alert("ไม่สามารถเริ่มกล้องได้: " + err);
+    });
+  }
+
+  // Add camera switch button
+  function addCameraSwitchButton() {
+    console.log('Adding camera switch button...');
+    const qrReader = document.getElementById('qr-reader');
+    
+    if (!qrReader) {
+      console.error('QR reader element not found for camera switch button');
+      return;
+    }
+    
+    // Remove existing button if any
+    const existingButton = qrReader.querySelector('.camera-switch-btn');
+    if (existingButton) {
+      console.log('Removing existing camera switch button');
+      existingButton.remove();
+    }
+    
+    const switchButton = document.createElement('button');
+    switchButton.className = 'camera-switch-btn';
+    switchButton.innerHTML = '<i class="fas fa-sync-alt"></i><span style="display:none;">🔄</span>';
+    // Fallback if FontAwesome doesn't load
+    setTimeout(() => {
+      if (switchButton.querySelector('i').offsetHeight === 0) {
+        switchButton.innerHTML = '🔄';
+      }
+    }, 500);
+    switchButton.style.cssText = `
+      position: absolute !important;
+      top: 10px !important;
+      right: 10px !important;
+      z-index: 1000 !important;
+      background: rgba(25, 118, 210, 0.9) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 50% !important;
+      width: 40px !important;
+      height: 40px !important;
+      font-size: 14px !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+      transition: all 0.3s ease !important;
+    `;
+    
+    switchButton.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Camera switch button clicked');
+      switchCamera();
+    };
+    
+    qrReader.appendChild(switchButton);
+    console.log('Camera switch button added successfully');
+  }
+
+  // Switch to next available camera
+  function switchCamera() {
+    if (!window.availableCameras || window.availableCameras.length <= 1) return;
+    
+    // Stop current scanner
+    if (window.qrScanner) {
+      window.qrScanner.stop().catch(() => {});
+      window.qrScanner = null;
+    }
+    
+    // Move to next camera
+    window.currentCameraIndex = (window.currentCameraIndex + 1) % window.availableCameras.length;
+    const nextCamera = window.availableCameras[window.currentCameraIndex];
+    
+    console.log('Switching to camera:', nextCamera);
+    
+    // Reinitialize scanner with new camera
+    setTimeout(() => {
+      try {
+        window.qrScanner = new Html5Qrcode("qr-reader");
+        startCameraWithId(nextCamera.id);
+      } catch (error) {
+        console.error('Error switching camera:', error);
+        alert('ไม่สามารถเปลี่ยนกล้องได้: ' + error.message);
+      }
+    }, 100);
+  }
+
+  // Try to parse QR code in alternative formats
+  function tryAlternativeFormats(qrText) {
+    try {
+      console.log('Trying alternative QR formats for:', qrText);
+      
+      // Format 1: Comma-separated values
+      // Expected: projectNo,customerName,partName,drawingNo,quantityOrdered
+      if (qrText.includes(',')) {
+        const parts = qrText.split(',');
+        if (parts.length >= 5) {
+          qrData = {
+            projectNo: parts[0].trim(),
+            customerName: parts[1].trim(),
+            partName: parts[2].trim(),
+            drawingNo: parts[3].trim(),
+            quantityOrdered: parts[4].trim()
+          };
+          console.log('Parsed as CSV format:', qrData);
+          return true;
+        }
+      }
+      
+      // Format 2: Pipe-separated values
+      if (qrText.includes('|')) {
+        const parts = qrText.split('|');
+        if (parts.length >= 5) {
+          qrData = {
+            projectNo: parts[0].trim(),
+            customerName: parts[1].trim(),
+            partName: parts[2].trim(),
+            drawingNo: parts[3].trim(),
+            quantityOrdered: parts[4].trim()
+          };
+          console.log('Parsed as pipe-separated format:', qrData);
+          return true;
+        }
+      }
+      
+      // Format 3: Key-value pairs (simple format)
+      // Expected: PROJECT:123\nCUSTOMER:ABC\nPART:XYZ\nDRAWING:456\nQTY:100
+      if (qrText.includes(':') && qrText.includes('\n')) {
+        const lines = qrText.split('\n');
+        const data = {};
+        for (const line of lines) {
+          const [key, value] = line.split(':');
+          if (key && value) {
+            const trimmedKey = key.trim().toUpperCase();
+            const trimmedValue = value.trim();
+            
+            if (trimmedKey.includes('PROJECT') || trimmedKey.includes('PROJ')) {
+              data.projectNo = trimmedValue;
+            } else if (trimmedKey.includes('CUSTOMER') || trimmedKey.includes('CUST')) {
+              data.customerName = trimmedValue;
+            } else if (trimmedKey.includes('PART')) {
+              data.partName = trimmedValue;
+            } else if (trimmedKey.includes('DRAWING') || trimmedKey.includes('DWG')) {
+              data.drawingNo = trimmedValue;
+            } else if (trimmedKey.includes('QUANTITY') || trimmedKey.includes('QTY')) {
+              data.quantityOrdered = trimmedValue;
+            }
+          }
+        }
+        
+        if (data.projectNo && data.customerName && data.partName && data.drawingNo && data.quantityOrdered) {
+          qrData = data;
+          console.log('Parsed as key-value format:', qrData);
+          return true;
+        }
+      }
+      
+      // Format 4: Try to extract from any text that might contain the data
+      // Look for patterns like numbers and text that could be our data
+      const words = qrText.split(/[\s,|;:\n\t]+/).filter(w => w.trim().length > 0);
+      if (words.length >= 5) {
+        // Assume first 5 non-empty words are our data fields
+        qrData = {
+          projectNo: words[0],
+          customerName: words[1],
+          partName: words[2],
+          drawingNo: words[3],
+          quantityOrdered: words[4]
+        };
+        console.log('Parsed as space-separated format:', qrData);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error in alternative format parsing:', error);
+      return false;
     }
   }
 
