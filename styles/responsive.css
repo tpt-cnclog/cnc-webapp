@@ -1,0 +1,217 @@
+/* Mobile and responsive styles */
+
+@media (max-width: 600px) {
+  .btn-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .btn-row.secondary-btn-row {
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  .btn-row.secondary-btn-row button,
+  .btn-row.secondary-btn-row .btn-secondary {
+    max-width: 100vw;
+    min-width: 0;
+    width: 50%;
+  }
+}
+
+@media (max-width: 600px) {
+  .btn-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  .btn-row button,
+  .btn-row .btn-secondary {
+    max-width: 100vw;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  main { 
+    max-width: 100vw; 
+    border-radius: 0; 
+  }
+  
+  .job-info, .form-section, .confirm-section { 
+    padding: 15px; 
+  }
+  
+  .btn-green, .btn-red { 
+    font-size: 1.2rem; 
+    padding: 15px 0; 
+  }
+  
+  .qr-bounding-box, #qr-reader {
+    max-width: 98vw;
+    aspect-ratio: 4/3.2;
+  }
+}
+
+/* Mobile vertical centering fix */
+@media (max-width: 600px) {
+  html, body {
+    width: 100vw;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+  }
+  
+  main {
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .qr-bounding-box {
+    padding: 0 0 12px 0;
+    max-width: 100vw;
+    width: 100vw;
+    margin: 0;
+  }
+  
+  #qr-reader {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+  
+  .branding-icon {
+    margin-top: auto;
+    margin-bottom: 10px;
+  }
+  
+  h1 {
+    margin-top: 8px;
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .qr-bounding-box {
+    max-width: 98vw;
+    aspect-ratio: auto;
+    padding-bottom: 15px;
+  }
+  
+  #qr-reader {
+    max-width: 96vw;
+    aspect-ratio: auto;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .btn-secondary {
+    font-size: 0.8rem;
+    padding: 15px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .btn-row,
+  .btn-row.secondary-btn-row {
+    flex-direction: column !important;
+    max-width: 100vw;
+    width: 100vw;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .btn-row button,
+  .btn-row .btn-secondary {
+    max-width: 100vw;
+    min-width: 0;
+    width: 100vw;
+  }
+}
+
+@media (max-width: 600px) {
+  .btn-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+  
+  .btn-row button {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+  
+  #info-screen {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  main {
+    max-width: 100vw;
+    width: 100vw;
+    border-radius: 0;
+    margin: 0;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    padding-bottom: 60px !important;
+  }
+  
+  .btn-row {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  #info-screen {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  .job-info, .form-section, .confirm-section {
+    padding: 10px;
+  }
+}
