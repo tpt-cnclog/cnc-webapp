@@ -5,7 +5,7 @@
 
 // ========== CRITICAL BACKEND CONFIGURATION ==========
 // WARNING: GAS_ENDPOINT is essential for all backend communication
-const url = "https://script.google.com/macros/s/AKfycbxXSOXtJ-CFInFI4BYqT-E4_o-TbsxMTfgDMi0h7Lwl3ensDNZQgzk8-pR-M7PuyTgt/exec";
+const url = "https://script.google.com/macros/s/AKfycbzJQYUFo_oMQzdYC0fXFdm3nrUDoEGE0GAjvcvMxwMqRiO_APDn1C2r3Q5m3zSgxNL-sw/exec";
 const GAS_ENDPOINT = url;
 
 // ========== GLOBAL APPLICATION STATE ==========
