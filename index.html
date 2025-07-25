@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPT-CNC JOB LOG</title>
+  <link rel="icon" type="image/png" href="JOBLOG LOGO.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1976d2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CNC Log">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="scripts/config.js"></script>
+  <script src="scripts/api-service.js"></script>
+  <script src="scripts/qr-scanner.js"></script>
+  <script src="scripts/data-validators.js"></script>
+  <script src="scripts/form-handlers.js"></script>
+  <script src="scripts/ui-manager.js"></script>
+  <script src="scripts/app.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sarabun:400,700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+<main>
+<!-- Scan Screen -->
+<div id="scan-screen" class="scan-screen-container">
+  <div class="branding-icon branding-container">
+    <img alt="Company Logo" src="logo2024-Black.png" class="logo-image">
+  </div>
+  <h1 class="page-title">CNC JOB LOG</h1>
+  <div class="qr-bounding-box qr-container">
+    <div class="instruction-container">
+      <span class="instruction-box"><span>แสกน QR Code ตรงนี้</span></span>
+    </div>
+    <div class="active" id="qr-reader"></div>
+    <div class="manual-input-button-container">
+      <button onclick="toggleManualInput()" class="manual-input-toggle-btn">
+        <i class="fas fa-keyboard" style="font-size: 1.1em;"></i>
+        <span>ไม่สามารถใช้กล้องได้? ใส่ข้อมูลด้วยตนเอง</span>
+      </button>
+    </div>
+<div id="manual-input" style="
+  display: none; 
+  width: 100%; 
+  max-width: 450px; 
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); 
+  border-radius: 16px; 
+  padding: 24px; 
+  margin: 15px 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border: 2px solid #e3f2fd;
+">
+<h3 style="
+  margin: 0 0 20px 0; 
+  text-align: center; 
+  color: #1976d2;
+  font-size: 1.3rem;
+  font-weight: 700;
+">
+<i class="fas fa-edit" style="margin-right: 8px;"></i>ใส่ข้อมูล QR Code
+</h3>
+<form onsubmit="processManualInput(event)">
+<label style="display: block; margin: 12px 0 6px 0; color: #333; font-weight: 600;">Project Number:</label>
+<input type="text" id="manual-project" required style="
+  width: 100%; 
+  padding: 12px; 
+  border: 2px solid #e1e5e9; 
+  border-radius: 8px; 
+  margin-bottom: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e1e5e9'">
+<label style="display: block; margin: 12px 0 6px 0; color: #333; font-weight: 600;">Customer Name:</label>
+<input type="text" id="manual-customer" required style="
+  width: 100%; 
+  padding: 12px; 
+  border: 2px solid #e1e5e9; 
+  border-radius: 8px; 
+  margin-bottom: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e1e5e9'">
+<label style="display: block; margin: 12px 0 6px 0; color: #333; font-weight: 600;">Part Name:</label>
+<input type="text" id="manual-part" required style="
+  width: 100%; 
+  padding: 12px; 
+  border: 2px solid #e1e5e9; 
+  border-radius: 8px; 
+  margin-bottom: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e1e5e9'">
+<label style="display: block; margin: 12px 0 6px 0; color: #333; font-weight: 600;">Drawing Number:</label>
+<input type="text" id="manual-drawing" required style="
+  width: 100%; 
+  padding: 12px; 
+  border: 2px solid #e1e5e9; 
+  border-radius: 8px; 
+  margin-bottom: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e1e5e9'">
+<label style="display: block; margin: 12px 0 6px 0; color: #333; font-weight: 600;">Quantity Ordered:</label>
+<input type="number" id="manual-quantity" required style="
+  width: 100%; 
+  padding: 12px; 
+  border: 2px solid #e1e5e9; 
+  border-radius: 8px; 
+  margin-bottom: 20px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e1e5e9'">
+<div style="text-align: center;">
+<button type="submit" style="
+  background: linear-gradient(90deg, #4caf50 0%, #388e3c 100%); 
+  color: white; 
+  border: none; 
+  border-radius: 8px; 
+  padding: 12px 24px; 
+  margin-right: 10px; 
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+  transition: all 0.2s ease;
+" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+<i class="fas fa-check" style="margin-right: 6px;"></i>ยืนยัน
+</button>
+<button type="button" onclick="toggleManualInput()" style="
+  background: linear-gradient(90deg, #757575 0%, #424242 100%); 
+  color: white; 
+  border: none; 
+  border-radius: 8px; 
+  padding: 12px 24px; 
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(117, 117, 117, 0.3);
+  transition: all 0.2s ease;
+" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+<i class="fas fa-times" style="margin-right: 6px;"></i>ยกเลิก
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- Job Info Screen -->
+<div id="info-screen" style="display:none;">
+<button class="btn-back" onclick="resetAll()" style="margin-top:25px; margin-bottom:30px; margin-left: 20px;">← <span style="font-size:1em; vertical-align:middle;">แสกน QR Code</span></button>
+<div class="main-bounding-box" style="border:2px solid #e0e0e0; border-radius:24px; padding:18px 0 32px 0; margin-bottom:24px; margin-left: 5px; margin-right: 5px; background:#ececec;">
+<h1>CNC JOB LOG</h1>
+<div class="job-info" id="job-info"></div>
+<div class="btn-row">
+<button class="btn-green main-btn" onclick="showScreen('start-form')">
+<i class="fas fa-play" style="font-size:1.3em;"></i>
+<span>เริ่มงานใหม่</span>
+</button>
+<button class="btn-red main-btn" onclick="fetchOpenJobsAndShowStopSelector()">
+<i class="fas fa-stop" style="font-size:1.3em;"></i>
+<span>งานเสร็จสิ้น</span>
+</button>
+</div>
+<div class="btn-row secondary-btn-row">
+<button class="btn-secondary pause secondary-btn" onclick="fetchOpenJobsAndShowPauseSelector()">
+<i class="fas fa-pause" style="font-size:1.3em;"></i>
+<span>หยุดชั่วคราว/Downtime</span>
+</button>
+<button class="btn-secondary continue secondary-btn" onclick="fetchPausedJobsAndShowContinueSelector()">
+<i class="fas fa-forward" style="font-size:1.3em;"></i>
+<span>ดำเนินการต่อ</span>
+</button>
+</div>
+<div class="btn-row secondary-btn-row">
+<button class="btn-secondary btn-machine-setting secondary-btn" id="machine-setting-btn" onclick="document.getElementById('machine-setting-modal').style.display = 'flex';" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+<i class="fas fa-cogs" style="font-size:1.3em;"></i>
+<span>Machine Setting</span>
+</button>
+<button class="btn-secondary btn-ot secondary-btn" id="ot-btn" onclick="checkOTStartTime()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#000000;">
+<i class="fas fa-clock" style="font-size:1.3em;"></i>
+<span>OT</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Start Form Screen -->
+<form class="form-section" id="start-form" onsubmit="submitStart(event)" style="display:none;">
+<button class="btn-back" onclick="showScreen('info-screen')" type="button">← กลับไปก่อนหน้า</button>
+<h2>เริ่มงาน</h2>
+<div class="job-info" id="start-job-info"></div>
+<label>Process Name:</label>
+<select name="processName" required="">
+<option value="">เลือก</option>
+<option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+<option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option> Machine Setting</option>
+</select>
+<label>Process No.:</label>
+<input inputmode="numeric" max="20" min="1" name="processNo" required="" type="number"/>
+<label>Step No.:</label>
+<input name="stepNo" onblur="validateStepNo(this)" pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" required="" type="text"/>
+<label>Machine No.:</label>
+<input name="machineNo" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01" required="" style="text-transform: uppercase;"/>
+<label>รหัสพนักงาน:</label>
+<input name="employeeCode" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001" required="" style="text-transform: uppercase;"/>
+<button type="submit">กดเพื่อส่ง</button>
+</form>
+<!-- Stop Form Screen -->
+<form class="form-section" id="stop-form" onsubmit="submitStop(event)" style="display:none;">
+<button class="btn-back" onclick="showScreen('info-screen')" type="button">← กลับไปก่อนหน้า</button>
+<h2>งานเสร็จสิ้น</h2>
+<div class="job-info" id="stop-job-info"> </div>
+<label>Process Name:</label>
+<select name="processName" required="">
+<option value="">เลือก</option>
+<option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
+<option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option value="Machine Setting">Machine Setting</option>
+</select>
+<label>Process No.:</label>
+<input inputmode="numeric" max="20" min="1" name="processNo" required="" type="number"/>
+<label>Step No.:</label>
+<input name="stepNo" onblur="validateStepNo(this)" pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" required="" type="text"/>
+<label>Machine No.:</label>
+<input name="machineNo" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01" required="" style="text-transform: uppercase;"/>
+<label>รหัสพนักงาน:</label>
+<input name="employeeCode" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001" required="" style="text-transform: uppercase;"/>
+<div class="stop-extra-field" id="fg-row">
+<label>FG จำนวน:</label>
+<input inputmode="numeric" name="fg" required="" type="number"/>
+</div>
+<div class="stop-extra-field" id="ng-row">
+<label>NG จำนวน:</label>
+<input inputmode="numeric" name="ng" required="" type="number"/>
+</div>
+<div class="stop-extra-field" id="rework-row">
+<label>Rework จำนวน:</label>
+<input inputmode="numeric" name="rework" required="" type="number"/>
+</div>
+<button type="submit">กดเพื่อส่ง</button>
+</form>
+<!-- Confirmation Screen -->
+<div class="confirm-section" id="confirm-screen" style="display:none;">
+<h2>ข้อมูลถูกส่งเข้าสู่ระบบเรียบร้อยแล้ว</h2>
+<button onclick="resetAll()">กลับไปหน้าแสกน QR Code</button>
+</div>
+<!-- Loading Screen -->
+<div class="confirm-section" id="loading-screen" style="display:none;">
+<div aria-label="กำลังโหลด" class="loader-spinner" role="status"></div>
+<h2 style="margin-top:32px;">กำลังส่งข้อมูล...</h2>
+</div>
+<!-- Pause/Downtime Reason Modal -->
+<div id="pause-reason-modal" style="display:none;">
+<div class="pause-reason-modal-content">
+<h2 style="text-align:center;">เลือกเหตุผลการหยุดงาน</h2>
+<form id="pause-reason-form">
+<div style="margin-bottom:18px;">
+<label>เลือกเหตุผลการหยุดงาน:</label>
+<select name="pauseReasonSelect" required style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;">
+<option value="">-- เลือกเหตุผล --</option>
+<option>รองาน</option>
+<option>ทิ้งเศษ</option>
+<option>Wait for Data inspection</option>
+<option>Change Tool</option>
+<option>Over Spec</option>
+<option>Machine Error</option>
+<option>Program Error</option>
+<option>ไฟดับ</option>
+<option>ลมตก</option>
+<option value="อื่นๆ โปรดระบุ">อื่นๆ โปรดระบุ</option>
+</select>
+</div>
+<div id="pause-other-reason" style="display:none; margin-bottom:18px;">
+<label>โปรดระบุเหตุผล:</label>
+<input maxlength="100" name="pauseOtherReason" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #90caf9; margin-top:6px;" type="text"/>
+</div>
+<div style="text-align:center;">
+<button style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;" type="submit">ส่งข้อมูล</button>
+<button onclick="closePauseReasonModal()" style="padding:10px 24px; border-radius:10px; background:#aaa; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin-left:10px;" type="button">ยกเลิก</button>
+</div>
+</form>
+</div>
+</div>
+</main>
+<!-- Machine Setting Modal -->
+<div id="machine-setting-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
+<div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+<h2>Machine Setting</h2>
+<p>เลือกประเภทการทำงาน</p>
+<button id="machine-setting-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม</button>
+<button id="machine-setting-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด</button>
+<br/><br/>
+<button onclick="closeMachineSettingModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
+</div>
+</div>
+<!-- OT Modal -->
+<div id="ot-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(255,255,255,0.85); z-index:3000; align-items:center; justify-content:center;">
+<div style="background:#fff; border-radius:18px; padding:32px 24px; max-width:340px; width:100%; margin:0 auto; box-shadow:0 2px 24px #0005; text-align:center;">
+<h2>OT (Overtime)</h2>
+<p>เลือกประเภทการทำงาน OT</p>
+<button id="ot-start-btn" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">เริ่ม OT</button>
+<button id="ot-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด OT</button>
+<br/><br/>
+<button onclick="closeOTModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
+</div>
+</div>
+</body>
+</html>
