@@ -171,6 +171,13 @@
 <span>งานเสร็จสิ้น</span>
 </button>
 </div>
+<!-- Daily Report Button -->
+<div class="btn-row" style="margin-top: 10px; margin-bottom: 10px;">
+<button class="btn-secondary daily-report secondary-btn" onclick="showDailyReportModal()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#4CAF50; color:#ffffff;">
+<i class="fas fa-chart-bar" style="font-size:1.3em;"></i>
+<span>รายงานประจำวัน</span>
+</button>
+</div>
 <div class="btn-row secondary-btn-row">
 <button class="btn-secondary pause secondary-btn" onclick="fetchOpenJobsAndShowPauseSelector()">
 <i class="fas fa-pause" style="font-size:1.3em;"></i>
@@ -310,6 +317,67 @@
 <button id="ot-stop-btn" style="padding:10px 32px; border-radius:10px; background:#b71c1c; color:#fff; border:none; font-size:1.1rem; cursor:pointer; margin:8px;">หยุด OT</button>
 <br/><br/>
 <button onclick="closeOTModal()" style="padding:8px 24px; border-radius:8px; background:#aaa; color:#fff; border:none; cursor:pointer;">ยกเลิก</button>
+</div>
+</div>
+<!-- Daily Report Modal -->
+<div id="daily-report-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
+<div style="background:#fff; border-radius:18px; padding:24px; max-width:500px; width:95%; max-height:90vh; overflow-y:auto; margin:0 auto; box-shadow:0 4px 24px rgba(0,0,0,0.2);">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #4CAF50; padding-bottom:12px;">
+<h2 style="margin:0; color:#2E7D32;">📊 รายงานประจำวัน</h2>
+<button onclick="closeDailyReportModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+</div>
+<form id="daily-report-form" onsubmit="submitDailyReport(event)">
+<!-- Job Information Section -->
+<div style="margin-bottom:24px;">
+<h3 style="color:#2E7D32; border-bottom:1px solid #4CAF50; padding-bottom:6px; margin-bottom:16px;">ข้อมูลงาน</h3>
+<div style="background:#f8f9fa; border-radius:8px; padding:16px;">
+<p style="margin:8px 0;"><strong>วันที่:</strong> <span id="daily-report-date-display"></span></p>
+<p style="margin:8px 0;"><strong>Project No.:</strong> <span id="daily-report-project-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Customer Name:</strong> <span id="daily-report-customer-name-display"></span></p>
+<p style="margin:8px 0;"><strong>Part Name:</strong> <span id="daily-report-part-name-display"></span></p>
+<p style="margin:8px 0;"><strong>Drawing No.:</strong> <span id="daily-report-drawing-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Quantity Ordered:</strong> <span id="daily-report-quantity-ordered-display"></span></p>
+<p style="margin:8px 0;"><strong>Process Name:</strong> <span id="daily-report-process-name-display"></span></p>
+<p style="margin:8px 0;"><strong>Process No.:</strong> <span id="daily-report-process-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Step No.:</strong> <span id="daily-report-step-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Machine No.:</strong> <span id="daily-report-machine-no-display"></span></p>
+</div>
+</div>
+<!-- Production Report Section -->
+<div style="margin-bottom:24px;">
+<h3 style="color:#2E7D32; border-bottom:1px solid #4CAF50; padding-bottom:6px; margin-bottom:16px;">รายงานผลผลิต</h3>
+<div style="margin-bottom:16px;">
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">รหัสพนักงาน *:</label>
+<input type="text" name="employeeCode" id="daily-report-employee-code" required placeholder="เช่น A0001" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="width:100%; padding:10px; border:2px solid #4CAF50; border-radius:8px; font-size:1rem; text-transform: uppercase;">
+</div>
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+<div>
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">FG *:</label>
+<input type="number" name="fg" id="daily-report-fg" min="0" required placeholder="0" oninput="updateDailyReportTotal()" style="width:100%; padding:10px; border:2px solid #4CAF50; border-radius:8px; font-size:1rem;">
+</div>
+<div>
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">NG *:</label>
+<input type="number" name="ng" id="daily-report-ng" min="0" required placeholder="0" oninput="updateDailyReportTotal()" style="width:100%; padding:10px; border:2px solid #4CAF50; border-radius:8px; font-size:1rem;">
+</div>
+<div>
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">Rework *:</label>
+<input type="number" name="rework" id="daily-report-rework" min="0" required placeholder="0" oninput="updateDailyReportTotal()" style="width:100%; padding:10px; border:2px solid #4CAF50; border-radius:8px; font-size:1rem;">
+</div>
+</div>
+<div style="margin-bottom:16px;">
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">Remark:</label>
+<textarea name="remark" id="daily-report-remark" rows="3" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" style="width:100%; padding:10px; border:2px solid #4CAF50; border-radius:8px; font-size:1rem; resize:vertical;"></textarea>
+</div>
+<div id="daily-report-total" style="background:#E8F5E8; border:2px solid #4CAF50; border-radius:8px; padding:12px; text-align:center; color:#2E7D32; font-weight:bold;">
+รวมชิ้นงาน: <span id="daily-report-total-pieces">0</span> ชิ้น
+</div>
+</div>
+<!-- Action Buttons -->
+<div style="display:flex; gap:12px; justify-content:center;">
+<button type="button" onclick="closeDailyReportModal()" style="padding:12px 24px; border-radius:10px; background:#757575; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ยกเลิก</button>
+<button type="submit" style="padding:12px 24px; border-radius:10px; background:#4CAF50; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">บันทึกรายงาน</button>
+</div>
+</form>
 </div>
 </div>
 </body>

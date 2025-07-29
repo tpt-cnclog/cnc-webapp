@@ -486,6 +486,80 @@ function optimisticUpdateOpenJobs(expectedChange) {
 }
 
 /**
+ * Submit handler for daily report form
+ * @param {Event} event - Form submission event
+ */
+function submitDailyReport(event) {
+    event.preventDefault();
+    if (window.isSubmitting) return;
+    window.isSubmitting = true;
+    
+    const form = document.getElementById('daily-report-form');
+    const formData = new FormData(form);
+    
+    // Collect form data
+    const data = {
+        date: document.getElementById('daily-report-date-display').textContent,
+        projectNo: document.getElementById('daily-report-project-no-display').textContent,
+        customerName: document.getElementById('daily-report-customer-name-display').textContent,
+        partName: document.getElementById('daily-report-part-name-display').textContent,
+        drawingNo: document.getElementById('daily-report-drawing-no-display').textContent,
+        quantityOrdered: document.getElementById('daily-report-quantity-ordered-display').textContent,
+        processName: document.getElementById('daily-report-process-name-display').textContent,
+        processNo: document.getElementById('daily-report-process-no-display').textContent,
+        stepNo: document.getElementById('daily-report-step-no-display').textContent,
+        machineNo: document.getElementById('daily-report-machine-no-display').textContent,
+        employeeCode: formData.get('employeeCode').trim().toUpperCase(),
+        fg: parseInt(formData.get('fg')) || 0,
+        ng: parseInt(formData.get('ng')) || 0,
+        rework: parseInt(formData.get('rework')) || 0,
+        remark: formData.get('remark').trim(),
+        action: 'DAILY_REPORT'
+    };
+    
+    // Validate required fields
+    if (!data.employeeCode) {
+        alert('กรุณาใส่รหัสพนักงาน');
+        window.isSubmitting = false;
+        return;
+    }
+    
+    if (data.fg === 0 && data.ng === 0 && data.rework === 0) {
+        alert('กรุณาใส่จำนวนชิ้นงานอย่างน้อย 1 รายการ');
+        window.isSubmitting = false;
+        return;
+    }
+    
+    // Close the daily report modal first, then show loading
+    closeDailyReportModal();
+    showScreen('loading-screen');
+    
+    // Submit to backend using same pattern as other forms
+    fetch(GAS_ENDPOINT, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(text => {
+        window.isSubmitting = false;
+        if (text.trim().startsWith("ERROR:")) {
+            alert(text.trim().replace("ERROR: ", ""));
+            showScreen('info-screen');
+        } else {
+            alert('บันทึกรายงานประจำวันเรียบร้อยแล้ว');
+            showScreen('info-screen');
+        }
+    })
+    .catch((error) => {
+        window.isSubmitting = false;
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+        showScreen('info-screen');
+    });
+}
+
+/**
  * Initializes form handlers when DOM is loaded
  */
 function initializeFormHandlers() {
@@ -508,6 +582,7 @@ function initializeFormHandlers() {
     window.stopOTSelectedJob = stopOTSelectedJob;
     window.pauseSelectedJob = pauseSelectedJob;
     window.continueSelectedJob = continueSelectedJob;
+    window.submitDailyReport = submitDailyReport;
     
     // Initialize other form-related event listeners as needed
     console.log('Form handlers initialized');

@@ -383,6 +383,243 @@ function closeOTModal() {
 }
 
 /**
+ * Shows the daily report open jobs selector first
+ */
+function showDailyReportModal() {
+    if (!qrData || Object.keys(qrData).length === 0) {
+        alert('กรุณาสแกน QR Code หรือใส่ข้อมูลงานก่อน');
+        return;
+    }
+    
+    // First show open jobs selector for daily report
+    fetchOpenJobsAndShowDailyReportSelector();
+}
+
+/**
+ * Fetches open jobs and shows daily report job selector
+ */
+function fetchOpenJobsAndShowDailyReportSelector() {
+    showOpenJobsLoading();
+    
+    fetchOpenJobs(qrData.projectNo, qrData.partName)
+        .then(openJobs => {
+            hideOpenJobsLoading();
+            // Show all open jobs for daily report selection
+            const reportableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
+            showDailyReportJobsSelector(reportableJobs);
+        })
+        .catch(error => {
+            hideOpenJobsLoading();
+            handleApiError(error, 'Loading open jobs for daily report');
+        });
+}
+
+/**
+ * Shows the daily report jobs selector modal
+ */
+function showDailyReportJobsSelector(openJobs) {
+    window._dailyReportJobs = openJobs;
+    
+    let html = `
+        <div style="position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:3000; display:flex; align-items:center; justify-content:center;">
+            <div style="background:#fff; border-radius:18px; padding:24px; max-width:700px; width:95%; max-height:80vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #4CAF50; padding-bottom:12px;">
+                    <h2 style="margin:0; color:#2E7D32;">📊 เลือกงานสำหรับรายงานประจำวัน</h2>
+                    <button onclick="closeDailyReportJobsSelector()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+                </div>`;
+    
+    if (openJobs.length === 0) {
+        html += `<div style="text-align:center; padding:40px; color:#666;">
+            <p style="font-size:1.2rem; margin-bottom:20px;">ไม่พบงานที่เปิดอยู่สำหรับโครงการนี้</p>
+            <button onclick="closeDailyReportJobsSelector()" style="padding:10px 32px; border-radius:10px; background:#1976d2; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">กลับ</button>
+        </div>`;
+    } else {
+        html += `<table style="width:100%; border-collapse:collapse; margin: 0 auto;">
+            <thead>
+                <tr style="background:#E8F5E8;">
+                    <th style="border:1px solid #4CAF50; padding:8px; text-align:left;">Process Name</th>
+                    <th style="border:1px solid #4CAF50; padding:8px; text-align:left;">Process No.</th>
+                    <th style="border:1px solid #4CAF50; padding:8px; text-align:left;">Step No.</th>
+                    <th style="border:1px solid #4CAF50; padding:8px; text-align:left;">Machine No.</th>
+                    <th style="border:1px solid #4CAF50; padding:8px; text-align:center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        
+        openJobs.forEach((job, idx) => {
+            html += `
+                <tr style="border-bottom:1px solid #ddd;">
+                    <td style="border:1px solid #ddd; padding:8px;">${job.processName || ''}</td>
+                    <td style="border:1px solid #ddd; padding:8px;">${job.processNo || ''}</td>
+                    <td style="border:1px solid #ddd; padding:8px;">${job.stepNo || ''}</td>
+                    <td style="border:1px solid #ddd; padding:8px;">${job.machineNo || ''}</td>
+                    <td style="border:1px solid #ddd; padding:8px; text-align:center;">
+                        <button onclick="selectJobForDailyReport(${idx})" style="padding:6px 16px; border-radius:6px; background:#4CAF50; color:#fff; border:none; cursor:pointer; font-size:0.9rem;">เลือก</button>
+                    </td>
+                </tr>`;
+        });
+        
+        html += `
+            </tbody>
+        </table>
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="closeDailyReportJobsSelector()" style="padding:10px 32px; border-radius:10px; background:#757575; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ยกเลิก</button>
+        </div>`;
+    }
+    
+    html += `
+            </div>
+        </div>`;
+    
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'daily-report-jobs-selector';
+    modalDiv.innerHTML = html;
+    document.body.appendChild(modalDiv);
+}
+
+/**
+ * Closes the daily report jobs selector
+ */
+function closeDailyReportJobsSelector() {
+    const modal = document.getElementById('daily-report-jobs-selector');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * Selects a job for daily report and opens the daily report modal
+ */
+function selectJobForDailyReport(idx) {
+    const job = window._dailyReportJobs[idx];
+    window._selectedDailyReportJob = job;
+    
+    // Close the job selector
+    closeDailyReportJobsSelector();
+    
+    // Open the daily report modal with selected job info
+    showDailyReportModalWithJob(job);
+}
+
+/**
+ * Shows the daily report modal with selected job information
+ */
+function showDailyReportModalWithJob(job) {
+    // Pre-fill job information
+    populateDailyReportFormWithJob(job);
+    
+    // Show modal
+    document.getElementById('daily-report-modal').style.display = 'flex';
+    
+    // Focus on employee code field
+    setTimeout(() => {
+        const employeeField = document.getElementById('daily-report-employee-code');
+        if (employeeField) employeeField.focus();
+    }, 100);
+}
+
+/**
+ * Closes the daily report modal and resets form
+ */
+function closeDailyReportModal() {
+    document.getElementById('daily-report-modal').style.display = 'none';
+    document.getElementById('daily-report-form').reset();
+    updateDailyReportTotal();
+}
+
+/**
+ * Populates the daily report form with selected job data and date
+ */
+function populateDailyReportFormWithJob(job) {
+    // Format current date as DD/MM/YYYY
+    const today = new Date();
+    const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    
+    // Pre-fill display elements with job data (display format like main info screen)
+    const displayElements = {
+        'daily-report-date-display': formattedDate,
+        'daily-report-project-no-display': qrData.projectNo || '',
+        'daily-report-customer-name-display': qrData.customerName || '',
+        'daily-report-part-name-display': qrData.partName || '',
+        'daily-report-drawing-no-display': qrData.drawingNo || '',
+        'daily-report-quantity-ordered-display': qrData.quantityOrdered || '',
+        'daily-report-process-name-display': job.processName || '',
+        'daily-report-process-no-display': job.processNo || '',
+        'daily-report-step-no-display': job.stepNo || '',
+        'daily-report-machine-no-display': job.machineNo || ''
+    };
+    
+    // Set the text content for each display element
+    Object.entries(displayElements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+    
+    // Reset production form fields
+    const productionFields = ['daily-report-employee-code', 'daily-report-fg', 'daily-report-ng', 'daily-report-rework', 'daily-report-remark'];
+    productionFields.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+    });
+    
+    // Reset total counter
+    updateDailyReportTotal();
+}
+
+/**
+ * Populates the daily report form with current job data and date
+ */
+function populateDailyReportForm() {
+    // Format current date as DD/MM/YYYY
+    const today = new Date();
+    const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    
+    // Pre-fill form fields with job data
+    const elements = {
+        'daily-report-date': formattedDate,
+        'daily-report-project-no': qrData.projectNo || '',
+        'daily-report-customer-name': qrData.customerName || '',
+        'daily-report-part-name': qrData.partName || '',
+        'daily-report-drawing-no': qrData.drawingNo || '',
+        'daily-report-quantity-ordered': qrData.quantityOrdered || ''
+    };
+    
+    // Set the values for each element
+    Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.value = value;
+    });
+    
+    // Clear production fields and process fields (these will be filled manually)
+    const clearFields = [
+        'daily-report-process-name', 'daily-report-process-no', 
+        'daily-report-step-no', 'daily-report-machine-no'
+    ];
+    clearFields.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+    });
+    
+    // Reset total counter
+    updateDailyReportTotal();
+}
+
+/**
+ * Updates the total pieces counter in daily report modal
+ */
+function updateDailyReportTotal() {
+    const fg = parseInt(document.getElementById('daily-report-fg')?.value) || 0;
+    const ng = parseInt(document.getElementById('daily-report-ng')?.value) || 0;
+    const rework = parseInt(document.getElementById('daily-report-rework')?.value) || 0;
+    
+    const total = fg + ng + rework;
+    const totalElement = document.getElementById('daily-report-total-pieces');
+    if (totalElement) {
+        totalElement.textContent = total;
+    }
+}
+
+/**
  * Shows current open jobs in the info screen
  * @param {Array} optimisticJobs - Optional pre-filtered jobs array
  */
@@ -465,6 +702,12 @@ function initializeUIManager() {
     window.closePauseReasonModal = closePauseReasonModal;
     window.closeMachineSettingModal = closeMachineSettingModal;
     window.closeOTModal = closeOTModal;
+    window.showDailyReportModal = showDailyReportModal;
+    window.closeDailyReportModal = closeDailyReportModal;
+    window.updateDailyReportTotal = updateDailyReportTotal;
+    window.closeDailyReportJobsSelector = closeDailyReportJobsSelector;
+    window.selectJobForDailyReport = selectJobForDailyReport;
+    window.populateDailyReportFormWithJob = populateDailyReportFormWithJob;
     
     console.log('UI Manager initialized');
 }
