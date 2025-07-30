@@ -2,7 +2,6 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <base href="/cnc-webapp/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TPT-CNC JOB LOG</title>
   <link rel="icon" type="image/png" href="JOBLOG LOGO.png">
@@ -16,13 +15,26 @@
     // Register Service Worker for PWA functionality
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('/cnc-webapp/sw.js')
           .then(function(registration) {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }, function(err) {
             console.log('ServiceWorker registration failed: ', err);
           });
       });
+    }
+  </script>
+  <script>
+    // PWA Debug and Fallback Script
+    console.log('PWA Debug Info:');
+    console.log('Current URL:', window.location.href);
+    console.log('Origin:', window.location.origin);
+    console.log('Pathname:', window.location.pathname);
+    
+    // Ensure we're on the correct path for PWA
+    if (window.location.pathname === '/' && window.location.hostname === 'tpt-cnclog.github.io') {
+      console.log('Redirecting to correct PWA path...');
+      window.location.replace('https://tpt-cnclog.github.io/cnc-webapp/');
     }
   </script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>

@@ -1095,7 +1095,7 @@ function submitDailyReport(data) {
     
     // Create row data
     const row = [
-      logNo,                    // Log No.
+      logNo,                   // Log No.
       data.date,               // วันที่
       data.projectNo,          // Project No.
       data.customerName,       // Customer Name
