@@ -1,21 +1,21 @@
 // Service Worker for CNC Job Log PWA
-const CACHE_NAME = 'cnc-job-log-v2';
+const CACHE_NAME = 'cnc-job-log-v3';
 const urlsToCache = [
-  '/cnc-webapp/',
-  '/cnc-webapp/index.html',
-  '/cnc-webapp/styles/main.css',
-  '/cnc-webapp/styles/components.css',
-  '/cnc-webapp/styles/responsive.css',
-  '/cnc-webapp/scripts/app.js',
-  '/cnc-webapp/scripts/ui-manager.js',
-  '/cnc-webapp/scripts/form-handlers.js',
-  '/cnc-webapp/scripts/data-validators.js',
-  '/cnc-webapp/scripts/qr-scanner.js',
-  '/cnc-webapp/scripts/api-service.js',
-  '/cnc-webapp/scripts/config.js',
-  '/cnc-webapp/JOBLOG LOGO.png',
-  '/cnc-webapp/logo2024-Black.png',
-  '/cnc-webapp/manifest.json'
+  './',
+  './index.html',
+  './styles/main.css',
+  './styles/components.css',
+  './styles/responsive.css',
+  './scripts/app.js',
+  './scripts/ui-manager.js',
+  './scripts/form-handlers.js',
+  './scripts/data-validators.js',
+  './scripts/qr-scanner.js',
+  './scripts/api-service.js',
+  './scripts/config.js',
+  './JOBLOG LOGO.png',
+  './logo2024-Black.png',
+  './manifest.json'
 ];
 
 // Install event - cache resources
@@ -29,15 +29,26 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// Fetch event - serve cached content when offline
+// Fetch event - serve cached content when offline, with fallback to index.html for navigation
 self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      }
-    )
+        // Return cached version if available
+        if (response) {
+          return response;
+        }
+        
+        // For navigation requests, try to fetch, then fallback to index.html
+        if (event.request.mode === 'navigate') {
+          return fetch(event.request).catch(function() {
+            return caches.match('./index.html');
+          });
+        }
+        
+        // For other requests, just try to fetch
+        return fetch(event.request);
+      })
   );
 });
 
