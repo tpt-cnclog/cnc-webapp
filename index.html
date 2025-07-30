@@ -12,29 +12,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="CNC Log">
   <script>
-    // Register Service Worker for PWA functionality
+    // Simple PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/cnc-webapp/sw.js', { scope: '/cnc-webapp/' })
+        navigator.serviceWorker.register('./sw.js')
           .then(function(registration) {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          }, function(err) {
-            console.log('ServiceWorker registration failed: ', err);
+            console.log('SW registered: ', registration);
+          })
+          .catch(function(registrationError) {
+            console.log('SW registration failed: ', registrationError);
           });
       });
-    }
-  </script>
-  <script>
-    // PWA Debug and Fallback Script - Force rebuild
-    console.log('PWA Debug Info:');
-    console.log('Current URL:', window.location.href);
-    console.log('Origin:', window.location.origin);
-    console.log('Pathname:', window.location.pathname);
-    
-    // Ensure we're on the correct path for PWA
-    if (window.location.pathname === '/' && window.location.hostname === 'tpt-cnclog.github.io') {
-      console.log('Redirecting to correct PWA path...');
-      window.location.replace('https://tpt-cnclog.github.io/cnc-webapp/');
     }
   </script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
