@@ -15,7 +15,7 @@
     // Register Service Worker for PWA functionality
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/cnc-webapp/sw.js')
+        navigator.serviceWorker.register('/cnc-webapp/sw.js', { scope: '/cnc-webapp/' })
           .then(function(registration) {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }, function(err) {
