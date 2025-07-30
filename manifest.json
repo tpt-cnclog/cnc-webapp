@@ -2,12 +2,12 @@
   "name": "TPT-CNC JOB LOG",
   "short_name": "CNC Log",
   "description": "CNC Job Logging Application for TPT Manufacturing",
-  "start_url": "./",
+  "start_url": "/cnc-webapp/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1976d2",
   "orientation": "portrait",
-  "scope": "./",
+  "scope": "/cnc-webapp/",
   "icons": [
     {
       "src": "JOBLOG LOGO.png",
