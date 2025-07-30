@@ -4,8 +4,15 @@
   <meta charset="utf-8">
   <title>Redirecting...</title>
   <script>
-    // Simple redirect to index.html for GitHub Pages SPA
-    window.location.replace('./index.html');
+    // GitHub Pages SPA redirect - handle both root and subpath
+    var currentPath = window.location.pathname;
+    var basePath = '/cnc-webapp/';
+    
+    if (currentPath === '/' || currentPath === basePath) {
+      window.location.replace(basePath);
+    } else {
+      window.location.replace('./index.html');
+    }
   </script>
 </head>
 <body>
