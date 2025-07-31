@@ -190,8 +190,8 @@ function showOpenJobsTableSelector(openJobs, mode = 'stop') {
  * @param {Array} openJobs - Array of open job objects that can be paused
  */
 function showPauseJobsTableSelector(openJobs) {
-    // Filter only jobs with status OPEN (not PAUSE or DOWNTIME)
-    const pausableJobs = openJobs.filter(job => job.status === 'OPEN');
+    // Filter jobs with status OPEN or OT (both can be paused)
+    const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
     
     // Remove any existing selector or overlay
     let selectorDiv = document.getElementById('pause-jobs-selector');
@@ -224,17 +224,26 @@ function showPauseJobsTableSelector(openJobs) {
                     <th>Process No.</th>
                     <th>Step No.</th>
                     <th>Machine No.</th>
+                    <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>`;
         
         pausableJobs.forEach((job, idx) => {
+            // Style status cell based on job status
+            const statusStyle = job.status === 'OT' 
+                ? 'background:#42a5f5; color:#000; font-weight:bold; padding:4px 8px; border-radius:4px;'
+                : 'background:#FFF59D; color:#222; font-weight:bold; padding:4px 8px; border-radius:4px;';
+            
             html += `<tr>
                 <td style="text-align:center; padding:4px 8px;">${job.processName}</td>
                 <td style="text-align:center; padding:4px 8px;">${job.processNo}</td>
                 <td style="text-align:center; padding:4px 8px;">${job.stepNo}</td>
                 <td style="text-align:center; padding:4px 8px;">${job.machineNo || ''}</td>
+                <td style="text-align:center; padding:4px 8px;">
+                    <span style="${statusStyle}">${job.status}</span>
+                </td>
                 <td style="text-align:center; padding:4px 8px;">
                     <button onclick="pauseSelectedJob(${idx})" style="padding:4px 12px; border-radius:6px; background:#ff9800; color:#fff; border:none; cursor:pointer;">หยุดชั่วคราว</button>
                 </td>
