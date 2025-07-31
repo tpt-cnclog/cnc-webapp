@@ -85,15 +85,22 @@ function clearData() {
 function fetchOpenJobsAndShowPauseSelector() {
     showOpenJobsLoading();
     
+    console.log('🔍 DEBUG: Fetching jobs for pause with QR data:', qrData);
+    
     fetchOpenJobs(qrData.projectNo, qrData.partName)
         .then(openJobs => {
             hideOpenJobsLoading();
+            console.log('📋 DEBUG: Received jobs from backend:', openJobs);
+            
             // Show jobs with status OPEN or OT
             const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
+            console.log('⚡ DEBUG: Filtered pausable jobs:', pausableJobs);
+            
             showPauseJobsTableSelector(pausableJobs);
         })
         .catch(error => {
             hideOpenJobsLoading();
+            console.error('❌ DEBUG: Error fetching jobs:', error);
             handleApiError(error, 'Loading open jobs for pause');
         });
 }
