@@ -654,6 +654,7 @@ function submitLog(data) {
           sheet.getRange(i + 1, 19).setValue("OT");
           SpreadsheetApp.flush();
           Utilities.sleep(100);
+          formatRow(i + 1);
           return;
         }
       }
@@ -724,6 +725,7 @@ function submitLog(data) {
 
           SpreadsheetApp.flush();
           Utilities.sleep(100);
+          formatRow(i + 1);
           return;
         }
       }
