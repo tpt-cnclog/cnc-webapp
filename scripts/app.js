@@ -9,10 +9,13 @@ function checkOTStartTime() {
     const startTime = new Date();
     startTime.setHours(OT_START_TIME.hours, OT_START_TIME.minutes, 0);
 
+    // TEMPORARILY DISABLED FOR TESTING - Time restriction check
+    /*
     if (now < startTime) {
         alert(UI_MESSAGES.OT_EARLY_WARNING);
         return;
     }
+    */
     
     document.getElementById('ot-modal').style.display = 'flex';
 }
