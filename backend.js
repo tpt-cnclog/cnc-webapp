@@ -558,8 +558,30 @@ function submitLog(data) {
 
     // START_OT logic
     if (String(data.action).toUpperCase().replace(/\s+/g, '') === 'START_OT') {
+      console.log('🚀 START_OT: Processing START_OT request with data:', JSON.stringify(data));
+      
       for (let i = values.length - 1; i > 0; i--) {
         const row = values[i];
+        
+        console.log(`🔍 START_OT: Checking row ${i}:`, {
+          rowProjectNo: row[1],
+          rowProcessName: row[6],
+          rowProcessNo: row[7],
+          rowStepNo: row[8],
+          rowMachineNo: row[9],
+          rowStatus: row[18],
+          dataProjectNo: data.projectNo,
+          dataProcessName: data.processName,
+          dataProcessNo: data.processNo,
+          dataStepNo: data.stepNo,
+          dataMachineNo: data.machineNo,
+          projectMatch: normalizeProjectNo(String(row[1])) == normalizeProjectNo(String(data.projectNo)),
+          processNameMatch: normalize(String(row[6])) == normalize(String(data.processName)),
+          processNoMatch: normalize(String(row[7])) == normalize(String(data.processNo)),
+          stepNoMatch: normalize(String(row[8])) == normalize(String(data.stepNo)),
+          machineNoMatch: normalize(String(row[9])) == normalize(String(data.machineNo)),
+          statusMatch: (row[18] == "OPEN" || row[18] == "OT")
+        });
         
         if (
           normalizeProjectNo(String(row[1])) == normalizeProjectNo(String(data.projectNo)) &&
@@ -569,6 +591,7 @@ function submitLog(data) {
           normalize(String(row[9])) == normalize(String(data.machineNo)) &&
           (row[18] == "OPEN" || row[18] == "OT")
         ) {
+          console.log('✅ START_OT: Found matching row at index', i);
           let otTimes = [];
           try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
           
