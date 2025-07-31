@@ -85,29 +85,17 @@ function clearData() {
 function fetchOpenJobsAndShowPauseSelector() {
     showOpenJobsLoading();
     
-    // 🚨 TEMPORARY TEST: Force QR data to match your OT job
-    const testQrData = {
-        projectNo: '2007023020F',
-        partName: '561-1022 COLLAR'
-    };
-    
-    console.log('🔍 DEBUG: Original QR data:', qrData);
-    console.log('🧪 DEBUG: Using test QR data:', testQrData);
-    
-    fetchOpenJobs(testQrData.projectNo, testQrData.partName)
+    fetchOpenJobs(qrData.projectNo, qrData.partName)
         .then(openJobs => {
             hideOpenJobsLoading();
-            console.log('📋 DEBUG: Received jobs from backend:', openJobs);
             
             // Show jobs with status OPEN or OT
             const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
-            console.log('⚡ DEBUG: Filtered pausable jobs:', pausableJobs);
             
             showPauseJobsTableSelector(pausableJobs);
         })
         .catch(error => {
             hideOpenJobsLoading();
-            console.error('❌ DEBUG: Error fetching jobs:', error);
             handleApiError(error, 'Loading open jobs for pause');
         });
 }

@@ -190,11 +190,8 @@ function showOpenJobsTableSelector(openJobs, mode = 'stop') {
  * @param {Array} openJobs - Array of open job objects that can be paused
  */
 function showPauseJobsTableSelector(openJobs) {
-    console.log('🎯 DEBUG: showPauseJobsTableSelector called with jobs:', openJobs);
-    
     // Filter jobs with status OPEN or OT (both can be paused)
     const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
-    console.log('🔥 DEBUG: Final pausable jobs after filtering:', pausableJobs);
     
     // Remove any existing selector or overlay
     let selectorDiv = document.getElementById('pause-jobs-selector');

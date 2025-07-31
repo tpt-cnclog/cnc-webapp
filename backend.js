@@ -1239,40 +1239,12 @@ function doGet(e) {
     const projectNo = normalizeProjectNo(e.parameter.projectNo || '');
     const partName = normalize(e.parameter.partName || '');
     
-    console.log('🔍 BACKEND DEBUG: doGet openJobs called with:', {
-      originalProjectNo: e.parameter.projectNo,
-      originalPartName: e.parameter.partName,
-      normalizedProjectNo: projectNo,
-      normalizedPartName: partName
-    });
-    
     const sheet = getCNCLogSheet();
     const values = sheet.getDataRange().getValues();
     const openJobs = [];
     
-    console.log('📊 BACKEND DEBUG: Total rows in sheet:', values.length);
-    
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
-      const rowProjectNo = normalizeProjectNo(row[1]);
-      const rowPartName = normalize(row[3]);
-      const rowStatus = row[18];
-      
-      console.log(`📋 BACKEND DEBUG: Row ${i}:`, {
-        originalProjectNo: row[1],
-        originalPartName: row[3],
-        normalizedProjectNo: rowProjectNo,
-        normalizedPartName: rowPartName,
-        status: rowStatus,
-        processName: row[6],
-        processNo: row[7],
-        stepNo: row[8],
-        machineNo: row[9],
-        projectMatch: rowProjectNo == projectNo,
-        partMatch: rowPartName == partName,
-        statusMatch: (rowStatus == "OPEN" || rowStatus == "PAUSE" || rowStatus == "OT"),
-        willInclude: (rowProjectNo == projectNo && rowPartName == partName && (rowStatus == "OPEN" || rowStatus == "PAUSE" || rowStatus == "OT"))
-      });
       
       if (
         normalizeProjectNo(row[1]) == projectNo &&
@@ -1287,11 +1259,8 @@ function doGet(e) {
           status: row[18]
         };
         openJobs.push(job);
-        console.log('✅ BACKEND DEBUG: Job included:', job);
       }
     }
-    
-    console.log('🎯 BACKEND DEBUG: Final openJobs array:', openJobs);
     
     return ContentService.createTextOutput(JSON.stringify(openJobs))
       .setMimeType(ContentService.MimeType.JSON);
