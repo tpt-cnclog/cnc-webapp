@@ -629,22 +629,8 @@ function submitLog(data) {
             throw new Error("ไม่สามารถเริ่ม OT ได้หลัง 22:30");
           }
           
-          // TEMPORARILY DISABLED FOR TESTING - Check if current time is after 17:30 (start limit)
-          /*
-          const todayStartLimit = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            OT_HOURS.START.h,
-            OT_HOURS.START.m,
-            0,
-            0
-          );
-          
-          if (now < todayStartLimit) {
-            throw new Error("ไม่สามารถเริ่ม OT ก่อน 17:30");
-          }
-          */
+          // TEMPORARILY DISABLED FOR TESTING - 17:30 start limit completely removed
+          // Time restriction code has been completely removed for testing purposes
           
           // Add new OT session
           otTimes.push({
