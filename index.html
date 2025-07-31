@@ -3,50 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>
-    // Dynamic base href detection - MUST run before any resources load
-    (function() {
-      const hostname = window.location.hostname;
-      const pathname = window.location.pathname;
-      
-      console.log('Detecting environment...');
-      console.log('Hostname:', hostname);
-      console.log('Pathname:', pathname);
-      console.log('Full URL:', window.location.href);
-      
-      let baseHref = './'; // Default
-      
-      if (hostname === 'tpt-cnclog.github.io') {
-        // Original GitHub Pages
-        baseHref = '/cnc-webapp/';
-        console.log('Environment: GitHub Pages (Original)');
-      } else if (hostname === 'gunnapatttt.github.io') {
-        // Your GitHub Pages
-        baseHref = '/cnc-webapp-local/';
-        console.log('Environment: GitHub Pages (Your Repository)');
-      } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '') {
-        // Local development
-        if (pathname.endsWith('/index.html')) {
-          // Accessing index.html directly - use the directory part
-          baseHref = pathname.substring(0, pathname.lastIndexOf('/') + 1);
-          console.log('Environment: Local Development (direct file access)');
-        } else if (pathname.endsWith('/')) {
-          // Accessing directory - use relative paths
-          baseHref = './';
-          console.log('Environment: Local Development (directory access)');
-        } else {
-          // Default to current directory
-          baseHref = './';
-          console.log('Environment: Local Development (default)');
-        }
-      }
-      
-      console.log('Base href will be set to:', baseHref);
-      
-      // Write the base tag immediately
-      document.write('<base href="' + baseHref + '">');
-    })();
-  </script>
+  <base href="/cnc-webapp/">
   <title>TPT-CNC JOB LOG</title>
   <link rel="icon" type="image/png" href="JOBLOG LOGO.png">
   <link rel="manifest" href="manifest.json">
