@@ -256,19 +256,58 @@ function calculateOtTimeMs(start, end) {
   return totalMs;
 }
 
+// Helper: Calculate total pause time in ms including both working hours AND OT hours
+function calculateTotalPauseTimeMs(start, end) {
+  // This function calculates pause duration spanning both working hours (08:30-16:45) 
+  // and OT hours (17:30-22:30) to ensure accurate pause time tracking
+  const workingTimeMs = calculateWorkingTimeMs(start, end);
+  const otTimeMs = calculateOtTimeMs(start, end);
+  return workingTimeMs + otTimeMs;
+}
+
+// Helper: Calculate pause time considering actual OT sessions (more accurate)
+function calculatePauseTimeWithOTSessions(pauseStart, pauseEnd, otSessions) {
+  // Calculate working hours pause time
+  const workingTimeMs = calculateWorkingTimeMs(pauseStart, pauseEnd);
+  
+  // Calculate OT time only for periods that overlap with actual OT sessions
+  let otTimeMs = 0;
+  
+  if (otSessions && otSessions.length > 0) {
+    for (let otSession of otSessions) {
+      if (otSession.start && otSession.end) {
+        const otStart = new Date(otSession.start);
+        const otEnd = new Date(otSession.end);
+        
+        // Check if pause period overlaps with this OT session
+        const overlapStart = new Date(Math.max(pauseStart.getTime(), otStart.getTime()));
+        const overlapEnd = new Date(Math.min(pauseEnd.getTime(), otEnd.getTime()));
+        
+        if (overlapEnd > overlapStart) {
+          // Calculate OT time only during the overlap period
+          otTimeMs += calculateOtTimeMs(overlapStart, overlapEnd);
+        }
+      }
+    }
+  }
+  
+  return workingTimeMs + otTimeMs;
+}
+
 // ========================================
 // PAUSE AND OT TIME FORMATTING FUNCTIONS
 // ========================================
 
 // Helper: Format pause/resume summary for sheet
-function formatPauseTimesSummary(pauseTimes) {
+function formatPauseTimesSummary(pauseTimes, otSessions) {
   if (!pauseTimes || !pauseTimes.length) return '';
   var validPauses = [];
   var counter = 1;
   
   pauseTimes.forEach(function(p) {
     if (p.pause && p.resume) {
-      var duration = msToHHMMSS(calculateWorkingTimeMs(new Date(p.pause), new Date(p.resume)));
+      // Use accurate calculation that considers actual OT sessions
+      var duration = msToHHMMSS(calculatePauseTimeWithOTSessions(new Date(p.pause), new Date(p.resume), otSessions));
       var typeLabel = (p.type === 'DOWNTIME') ? 'Downtime' : 'Normal Pause';
       var reason = p.reason ? ' - ' + p.reason : '';
       var pauseStart = p.pause_local || formatLocalTimestamp(p.pause);
@@ -282,14 +321,29 @@ function formatPauseTimesSummary(pauseTimes) {
   return validPauses.join(' | ');
 }
 
-function sumPauseTypeMs(pauseTimes, type) {
+function sumPauseTypeMs(pauseTimes, type, otSessions) {
   if (!pauseTimes) return 0;
   return pauseTimes.reduce(function(sum, p) {
     if (p.type === type && p.pause && p.resume) {
-      return sum + calculateWorkingTimeMs(new Date(p.pause), new Date(p.resume));
+      // Use accurate calculation that considers actual OT sessions
+      return sum + calculatePauseTimeWithOTSessions(new Date(p.pause), new Date(p.resume), otSessions);
     }
     return sum;
   }, 0);
+}
+
+// Helper: Calculate total pause time with OT session awareness
+function calculateTotalPauseTimeWithOTSessions(pauseTimes, otSessions) {
+  if (!pauseTimes) return 0;
+  let totalMs = 0;
+  
+  for (let p of pauseTimes) {
+    if (p.pause && p.resume) {
+      totalMs += calculatePauseTimeWithOTSessions(new Date(p.pause), new Date(p.resume), otSessions);
+    }
+  }
+  
+  return totalMs;
 }
 
 // Helper: Format reason summary with numbering from first to last
@@ -504,8 +558,30 @@ function submitLog(data) {
 
     // START_OT logic
     if (String(data.action).toUpperCase().replace(/\s+/g, '') === 'START_OT') {
+      console.log('🚀 START_OT: Processing START_OT request with data:', JSON.stringify(data));
+      
       for (let i = values.length - 1; i > 0; i--) {
         const row = values[i];
+        
+        console.log(`🔍 START_OT: Checking row ${i}:`, {
+          rowProjectNo: row[1],
+          rowProcessName: row[6],
+          rowProcessNo: row[7],
+          rowStepNo: row[8],
+          rowMachineNo: row[9],
+          rowStatus: row[18],
+          dataProjectNo: data.projectNo,
+          dataProcessName: data.processName,
+          dataProcessNo: data.processNo,
+          dataStepNo: data.stepNo,
+          dataMachineNo: data.machineNo,
+          projectMatch: normalizeProjectNo(String(row[1])) == normalizeProjectNo(String(data.projectNo)),
+          processNameMatch: normalize(String(row[6])) == normalize(String(data.processName)),
+          processNoMatch: normalize(String(row[7])) == normalize(String(data.processNo)),
+          stepNoMatch: normalize(String(row[8])) == normalize(String(data.stepNo)),
+          machineNoMatch: normalize(String(row[9])) == normalize(String(data.machineNo)),
+          statusMatch: (row[18] == "OPEN" || row[18] == "OT")
+        });
         
         if (
           normalizeProjectNo(String(row[1])) == normalizeProjectNo(String(data.projectNo)) &&
@@ -515,6 +591,7 @@ function submitLog(data) {
           normalize(String(row[9])) == normalize(String(data.machineNo)) &&
           (row[18] == "OPEN" || row[18] == "OT")
         ) {
+          console.log('✅ START_OT: Found matching row at index', i);
           let otTimes = [];
           try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
           
@@ -577,10 +654,11 @@ function submitLog(data) {
           sheet.getRange(i + 1, 19).setValue("OT");
           SpreadsheetApp.flush();
           Utilities.sleep(100);
+          formatRow(i + 1);
           return;
         }
       }
-      throw new Error("ไม่พบงานที่เปิดอยู่สำหรับการเริ่ม OT");
+      throw new Error("ไม่พบงานที่เปิดอยู่สำหรับการเริ่ม OT\n(หมายเหตุ: หากงานอยู่ในสถานะพักงาน กรุณาดำเนินการต่อก่อนเริ่ม OT)");
     }
 
     // STOP_OT logic
@@ -602,20 +680,35 @@ function submitLog(data) {
           normalize(row[7]) == normalize(data.processNo) &&
           normalize(row[8]) == normalize(data.stepNo) &&
           normalize(row[9]) == normalize(data.machineNo) &&
-          row[18] == "OT"
+          (row[18] == "OT" || row[18] == "PAUSE")  // Allow stopping OT on both OT and PAUSE status
         ) {
           let otTimes = [];
           try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+          
+          // Check if there are any open OT sessions to close
+          let hasOpenOT = false;
           for (let j = otTimes.length - 1; j >= 0; j--) {
             if (otTimes[j].start && !otTimes[j].end) {
               const now = new Date();
               otTimes[j].end = now.toISOString();
               otTimes[j].end_local = formatLocalTimestamp(now);
+              hasOpenOT = true;
               break;
             }
           }
+          
+          // If no open OT sessions found, throw error
+          if (!hasOpenOT) {
+            throw new Error("ไม่พบเซสชัน OT ที่เปิดอยู่สำหรับการหยุด OT");
+          }
+          
           sheet.getRange(i + 1, 26).setValue(JSON.stringify(otTimes));
-          sheet.getRange(i + 1, 19).setValue("OPEN");
+          
+          // Only change status if job was in OT status, preserve PAUSE status
+          if (row[18] === "OT") {
+            sheet.getRange(i + 1, 19).setValue("OPEN");
+          }
+          // If job was paused, keep it paused - don't change status
 
           // Update OT Times summary and Total OT Duration
           let totalOtMs = 0;
@@ -632,10 +725,11 @@ function submitLog(data) {
 
           SpreadsheetApp.flush();
           Utilities.sleep(100);
+          formatRow(i + 1);
           return;
         }
       }
-      throw new Error("ไม่พบงานที่อยู่ในสถานะ OT สำหรับการหยุด OT");
+      throw new Error("ไม่พบงานที่ตรงกันหรือไม่มีเซสชัน OT ที่เปิดอยู่สำหรับการหยุด OT");
     }
 
     // CONTINUE logic
@@ -709,15 +803,15 @@ function submitLog(data) {
 
           // Set status back to OT if it was in OT when paused
           sheet.getRange(i + 1, 19).setValue(wasInOT ? "OT" : "OPEN");
-          let totalPaused = 0;
-          for (let p of pauseTimes) {
-            if (p.pause && p.resume) {
-              totalPaused += calculateWorkingTimeMs(new Date(p.pause), new Date(p.resume));
-            }
-          }
-          let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME'));
-          let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE'));
-          sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes));
+          
+          // Get OT sessions for accurate pause time calculation
+          let otTimes = [];
+          try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+          
+          let totalPaused = calculateTotalPauseTimeWithOTSessions(pauseTimes, otTimes);
+          let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME', otTimes));
+          let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE', otTimes));
+          sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes, otTimes));
           sheet.getRange(i + 1, 21).setValue(totalDowntime);
           sheet.getRange(i + 1, 22).setValue(totalNormalPause);
           sheet.getRange(i + 1, 23).setValue(msToHHMMSSWithPlaceholder(totalPaused));
@@ -837,15 +931,15 @@ function submitLog(data) {
           pause_local: formatLocalTimestamp(now),
           wasInOT: isOT  // Track if this pause happened during OT
         });
-        let totalPaused = 0;
-        for (let p of pauseTimes) {
-          if (p.pause && p.resume) {
-            totalPaused += calculateWorkingTimeMs(new Date(p.pause), new Date(p.resume));
-          }
-        }
-        let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME'));
-        let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE'));
-        sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes));
+        
+        // Get OT sessions for accurate pause time calculation
+        let otTimes = [];
+        try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+        
+        let totalPaused = calculateTotalPauseTimeWithOTSessions(pauseTimes, otTimes);
+        let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME', otTimes));
+        let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE', otTimes));
+        sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes, otTimes));
         sheet.getRange(i + 1, 21).setValue(totalDowntime);
         sheet.getRange(i + 1, 22).setValue(totalNormalPause);
         sheet.getRange(i + 1, 23).setValue(msToHHMMSSWithPlaceholder(totalPaused));
@@ -956,18 +1050,13 @@ function submitLog(data) {
           sheet.getRange(i + 1, 27).setValue(formatOtTimesSummary(otTimes));
           sheet.getRange(i + 1, 28).setValue(msToHHMMSSWithPlaceholder(totalOtMs));
 
-          // Calculate total pause time
-          let totalPaused = 0;
-          for (let p of pauseTimes) {
-            if (p.pause && p.resume) {
-              totalPaused += calculateWorkingTimeMs(new Date(p.pause), new Date(p.resume));
-            }
-          }
-          let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME'));
-          let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE'));
+          // Calculate total pause time using OT session awareness
+          let totalPaused = calculateTotalPauseTimeWithOTSessions(pauseTimes, otTimes);
+          let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME', otTimes));
+          let totalNormalPause = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'PAUSE', otTimes));
 
           // Write pause/OT summaries
-          sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes));
+          sheet.getRange(i + 1, 20).setValue(formatPauseTimesSummary(pauseTimes, otTimes));
           sheet.getRange(i + 1, 21).setValue(totalDowntime);
           sheet.getRange(i + 1, 22).setValue(totalNormalPause);
           sheet.getRange(i + 1, 23).setValue(msToHHMMSSWithPlaceholder(totalPaused));
@@ -1174,25 +1263,30 @@ function doGet(e) {
   if (e.parameter.mode === 'openJobs') {
     const projectNo = normalizeProjectNo(e.parameter.projectNo || '');
     const partName = normalize(e.parameter.partName || '');
+    
     const sheet = getCNCLogSheet();
     const values = sheet.getDataRange().getValues();
     const openJobs = [];
+    
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
+      
       if (
         normalizeProjectNo(row[1]) == projectNo &&
         normalize(row[3]) == partName &&
         (row[18] == "OPEN" || row[18] == "PAUSE" || row[18] == "OT")
       ) {
-        openJobs.push({
+        const job = {
           processName: row[6],
           processNo: row[7],
           stepNo: row[8],
           machineNo: row[9],
           status: row[18]
-        });
+        };
+        openJobs.push(job);
       }
     }
+    
     return ContentService.createTextOutput(JSON.stringify(openJobs))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -1236,10 +1330,14 @@ function autoStopAllOTJobs() {
     
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
-      if (row[18] === "OT") { // Status column
-        try {
-          let otTimes = [];
-          try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+      
+      // Check ALL jobs for open OT sessions, regardless of current status
+      try {
+        let otTimes = [];
+        try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+        
+        // Only process if there are OT times to check
+        if (otTimes.length > 0) {
           
           let changed = false;
           // Check for open OT sessions
@@ -1279,15 +1377,21 @@ function autoStopAllOTJobs() {
               }
             }
             
-            // Update summaries and status
+            // Update summaries
             sheet.getRange(i + 1, 27).setValue(formatOtTimesSummary(otTimes));
             sheet.getRange(i + 1, 28).setValue(msToHHMMSSWithPlaceholder(totalOtMs));
-            sheet.getRange(i + 1, 19).setValue("OPEN"); // Set status back to OPEN
+            
+            // Only change status to OPEN if job was previously in OT status
+            // This preserves PAUSE, DOWNTIME, and other statuses while still closing OT sessions
+            if (row[18] === "OT") {
+              sheet.getRange(i + 1, 19).setValue("OPEN");
+            }
+            
             rowsChanged++;
           }
-        } catch (e) {
-          console.error('Error processing row ' + (i + 1) + ': ' + e.toString());
         }
+      } catch (e) {
+        console.error('Error processing row ' + (i + 1) + ': ' + e.toString());
       }
     }
     

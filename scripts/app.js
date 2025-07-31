@@ -88,8 +88,10 @@ function fetchOpenJobsAndShowPauseSelector() {
     fetchOpenJobs(qrData.projectNo, qrData.partName)
         .then(openJobs => {
             hideOpenJobsLoading();
+            
             // Show jobs with status OPEN or OT
             const pausableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
+            
             showPauseJobsTableSelector(pausableJobs);
         })
         .catch(error => {
