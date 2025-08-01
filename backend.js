@@ -885,9 +885,9 @@ function submitLog(data) {
       "",
       "OPEN",
       "",
-      0,
-      0,
-      0,
+      "",
+      "",
+      "",
       JSON.stringify([])
     ];
     console.log("Appending row:", row);
@@ -1094,10 +1094,10 @@ function submitLog(data) {
             sheet.getRange(i + 1, 17).setValue(data.ng || 0);
             sheet.getRange(i + 1, 18).setValue(data.rework || 0);
           } else {
-            // For Machine Setting, leave FG/NG/Rework empty
-            sheet.getRange(i + 1, 16).setValue('');
-            sheet.getRange(i + 1, 17).setValue('');
-            sheet.getRange(i + 1, 18).setValue('');
+            // For Machine Setting, set FG/NG/Rework to "-"
+            sheet.getRange(i + 1, 16).setValue('-');
+            sheet.getRange(i + 1, 17).setValue('-');
+            sheet.getRange(i + 1, 18).setValue('-');
           }
 
           // Set status to CLOSE
