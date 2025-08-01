@@ -764,7 +764,6 @@ function submitLog(data) {
           row[18] == "PAUSE"
         ) {
           console.log('MATCH FOUND for CONTINUE at row', i);
-          sheet.getRange(i + 1, 19).setValue("OPEN");
           let pauseTimes = [];
           try { pauseTimes = JSON.parse(row[23] || "[]"); } catch { pauseTimes = []; }
           let lastPauseIdx = pauseTimes.length - 1;
@@ -801,12 +800,38 @@ function submitLog(data) {
             pauseTimes[lastPauseIdx].pause_local = formatLocalTimestamp(pauseTimes[lastPauseIdx].pause);
           }
 
-          // Set status back to OT if it was in OT when paused
-          sheet.getRange(i + 1, 19).setValue(wasInOT ? "OT" : "OPEN");
-          
           // Get OT sessions for accurate pause time calculation
           let otTimes = [];
           try { otTimes = row[25] ? JSON.parse(row[25]) : []; } catch { otTimes = []; }
+
+          // Context-aware status determination: only set to OT if both conditions are met
+          let shouldBeOT = false;
+          
+          // Check if there are any active OT sessions (start but no end)
+          const hasActiveOTSession = otTimes.some(ot => ot.start && !ot.end);
+          
+          // Check if current time is within OT hours (17:30-22:30)
+          const currentTime = new Date();
+          const otStartToday = new Date();
+          otStartToday.setHours(OT_HOURS.START.h, OT_HOURS.START.m, 0, 0);
+          const otEndToday = new Date();
+          otEndToday.setHours(OT_HOURS.END.h, OT_HOURS.END.m, 0, 0);
+          const isWithinOTHours = currentTime >= otStartToday && currentTime <= otEndToday;
+          
+          // Only set to OT if both conditions are met
+          shouldBeOT = hasActiveOTSession && isWithinOTHours;
+          
+          console.log('CONTINUE status determination:', {
+            wasInOT: wasInOT,
+            hasActiveOTSession: hasActiveOTSession,
+            isWithinOTHours: isWithinOTHours,
+            currentTime: formatLocalTimestamp(currentTime),
+            shouldBeOT: shouldBeOT,
+            finalStatus: shouldBeOT ? "OT" : "OPEN"
+          });
+
+          // Set status based on current context, not just historical pause context
+          sheet.getRange(i + 1, 19).setValue(shouldBeOT ? "OT" : "OPEN");
           
           let totalPaused = calculateTotalPauseTimeWithOTSessions(pauseTimes, otTimes);
           let totalDowntime = msToHHMMSSWithPlaceholder(sumPauseTypeMs(pauseTimes, 'DOWNTIME', otTimes));
