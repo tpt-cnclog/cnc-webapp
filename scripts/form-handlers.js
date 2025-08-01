@@ -301,11 +301,6 @@ function showPauseReasonModal(job) {
         closePauseReasonModal();
         showScreen('loading-screen');
         
-        // Add timestamp and working hours context for proper duration calculation
-        const pauseTimestamp = new Date();
-        const otStart = new Date();
-        otStart.setHours(OT_START_TIME.hours, OT_START_TIME.minutes, 0);
-        
         fetch(GAS_ENDPOINT, {
             method: "POST",
             mode: "cors",
@@ -318,11 +313,7 @@ function showPauseReasonModal(job) {
                 machineNo: job.machineNo,
                 status: 'PAUSE',
                 pauseType: pauseType,
-                pauseReason: finalReason,
-                pauseTimestamp: pauseTimestamp.toISOString(),
-                otStartTime: otStart.toISOString(),
-                currentlyInOT: pauseTimestamp >= otStart,
-                action: 'PAUSE'
+                pauseReason: finalReason
             })
         })
         .then(response => response.text())
@@ -363,25 +354,14 @@ function continueSelectedJob(idx) {
     closeContinueJobsSelector();
     showScreen('loading-screen');
     
-    // Check if current time is during OT hours
-    const now = new Date();
-    const startTime = new Date();
-    startTime.setHours(OT_START_TIME.hours, OT_START_TIME.minutes, 0);
-    
-    // Set status based on current time - OT if after start time, OPEN otherwise
-    const status = now >= startTime ? 'OT' : 'OPEN';
-    
     const data = {
         ...qrData,
         processName: job.processName,
         processNo: job.processNo,
         stepNo: job.stepNo,
         machineNo: job.machineNo,
-        status: status,
-        action: 'CONTINUE',
-        continueTimestamp: now.toISOString(),
-        otStartTime: startTime.toISOString(),
-        currentlyInOT: now >= startTime
+        status: 'OPEN',
+        action: 'CONTINUE'
     };
 
     fetch(GAS_ENDPOINT, {
@@ -406,44 +386,6 @@ function continueSelectedJob(idx) {
         alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
         showScreen('info-screen');
     });
-}
-
-/**
- * Calculates pause duration split between regular hours and OT hours
- * This helps the backend understand how to properly account for pause time
- * @param {Date} pauseTime - When the job was paused
- * @param {Date} continueTime - When the job was continued
- * @param {Date} otStartTime - When OT starts for the day
- * @returns {Object} Duration breakdown
- */
-function calculatePauseDurationBreakdown(pauseTime, continueTime, otStartTime) {
-    const pauseTimestamp = new Date(pauseTime);
-    const continueTimestamp = new Date(continueTime);
-    const otStart = new Date(otStartTime);
-    
-    let regularHoursPause = 0; // minutes
-    let otHoursPause = 0; // minutes
-    
-    // Case 1: Both pause and continue are before OT
-    if (continueTimestamp <= otStart) {
-        regularHoursPause = (continueTimestamp - pauseTimestamp) / (1000 * 60);
-    }
-    // Case 2: Both pause and continue are during OT
-    else if (pauseTimestamp >= otStart) {
-        otHoursPause = (continueTimestamp - pauseTimestamp) / (1000 * 60);
-    }
-    // Case 3: Pause starts before OT, continue during OT (crosses boundary)
-    else if (pauseTimestamp < otStart && continueTimestamp > otStart) {
-        regularHoursPause = (otStart - pauseTimestamp) / (1000 * 60);
-        otHoursPause = (continueTimestamp - otStart) / (1000 * 60);
-    }
-    
-    return {
-        totalMinutes: regularHoursPause + otHoursPause,
-        regularHoursMinutes: regularHoursPause,
-        otHoursMinutes: otHoursPause,
-        crossesOTBoundary: regularHoursPause > 0 && otHoursPause > 0
-    };
 }
 
 /**

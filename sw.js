@@ -17,7 +17,7 @@ const urlsToCache = [
   './JOBLOG LOGO.png',
   './logo2024-Black.png'
 ];
-
+ 
 // Install event
 self.addEventListener('install', function(event) {
   event.waitUntil(
