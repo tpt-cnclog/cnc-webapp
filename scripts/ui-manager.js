@@ -413,8 +413,8 @@ function fetchOpenJobsAndShowDailyReportSelector() {
     fetchOpenJobs(qrData.projectNo, qrData.partName)
         .then(openJobs => {
             hideOpenJobsLoading();
-            // Show all open jobs for daily report selection
-            const reportableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT');
+            // Show all open jobs for daily report selection (including PAUSE status)
+            const reportableJobs = openJobs.filter(job => job.status === 'OPEN' || job.status === 'OT' || job.status === 'PAUSE');
             showDailyReportJobsSelector(reportableJobs);
         })
         .catch(error => {
