@@ -560,6 +560,91 @@ function submitDailyReport(event) {
 }
 
 /**
+ * Show QC Report Modal
+ */
+function showQCReportModal() {
+    if (!qrData) {
+        alert('กรุณาแสกน QR Code ก่อน');
+        return;
+    }
+    
+    // Populate QC report job information
+    document.getElementById('qc-report-date-display').textContent = new Date().toLocaleDateString('th-TH');
+    document.getElementById('qc-report-project-no-display').textContent = qrData.projectNo || '-';
+    document.getElementById('qc-report-customer-name-display').textContent = qrData.customerName || '-';
+    document.getElementById('qc-report-part-name-display').textContent = qrData.partName || '-';
+    document.getElementById('qc-report-drawing-no-display').textContent = qrData.drawingNo || '-';
+    document.getElementById('qc-report-quantity-ordered-display').textContent = qrData.quantityOrdered || '-';
+    
+    // Reset form
+    document.getElementById('qc-report-form').reset();
+    
+    // Show modal
+    document.getElementById('qc-report-modal').style.display = 'flex';
+}
+
+/**
+ * Close QC Report Modal
+ */
+function closeQCReportModal() {
+    document.getElementById('qc-report-modal').style.display = 'none';
+}
+
+/**
+ * Submit QC Report
+ * @param {Event} event - Form submission event
+ */
+function submitQCReport(event) {
+    event.preventDefault();
+    if (window.isSubmitting) return;
+    window.isSubmitting = true;
+    
+    const form = document.getElementById('qc-report-form');
+    const formData = new FormData(form);
+    
+    const data = {
+        action: 'QC_REPORT',
+        ...qrData,
+        employeeCode: formData.get('employeeCode'),
+        fg: parseInt(formData.get('fg')) || 0,
+        ng: 0, // QC doesn't produce NG
+        rework: 0, // QC doesn't produce rework
+        remark: formData.get('remark') || '',
+        processName: 'QC',
+        processNo: 1,
+        stepNo: '1',
+        machineNo: 'QC01'
+    };
+
+    // Close modal first, then show loading screen
+    closeQCReportModal();
+    showScreen('loading-screen');
+
+    fetch(GAS_ENDPOINT, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(text => {
+        window.isSubmitting = false;
+        if (text.trim().startsWith("ERROR:")) {
+            alert(text.trim().replace("ERROR: ", ""));
+            showScreen('info-screen');
+        } else {
+            alert('บันทึก QC Report เรียบร้อยแล้ว');
+            showScreen('info-screen');
+        }
+    })
+    .catch((error) => {
+        window.isSubmitting = false;
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+        showScreen('info-screen');
+    });
+}
+
+/**
  * Initializes form handlers when DOM is loaded
  */
 function initializeFormHandlers() {
@@ -583,6 +668,9 @@ function initializeFormHandlers() {
     window.pauseSelectedJob = pauseSelectedJob;
     window.continueSelectedJob = continueSelectedJob;
     window.submitDailyReport = submitDailyReport;
+    window.showQCReportModal = showQCReportModal;
+    window.closeQCReportModal = closeQCReportModal;
+    window.submitQCReport = submitQCReport;
     
     // Initialize other form-related event listeners as needed
     console.log('Form handlers initialized');

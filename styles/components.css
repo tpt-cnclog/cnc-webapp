@@ -177,7 +177,7 @@
   padding: 16px 12px;
   border: none;
   border-radius: 18px;
-  color: #fff;
+  color: #000000; /* Black text as default */
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 12px #1976d244;
@@ -194,18 +194,44 @@
 }
 
 .btn-secondary.pause {
-  background: #FFF59D;
-  color: #222;
+  background: #FFD54F; /* Yellow for Downtime */
+  color: #000000; /* Black text */
 }
 
 .btn-secondary.continue {
-  background: #90caf9;
-  color: #222;
+  background: #81D4FA; /* Light Blue for Continue */
+  color: #000000; /* Black text */
 }
 
 .btn-machine-setting {
-  background: #ffb74d;
-  color: #222;
+  background: #FF9800; /* Orange for Machine Setting */
+  color: #000000; /* Black text */
+}
+
+.btn-secondary.btn-ot {
+  background: #2196F3; /* Blue for OT */
+  color: #000000; /* Black text */
+}
+
+/* Hover effects for secondary buttons */
+.btn-secondary.pause:hover, .btn-secondary.pause:focus {
+  background: #FFC107; /* Darker yellow on hover */
+  color: #000000; /* Black text */
+}
+
+.btn-secondary.continue:hover, .btn-secondary.continue:focus {
+  background: #4FC3F7; /* Darker light blue on hover */
+  color: #000000; /* Black text */
+}
+
+.btn-machine-setting:hover, .btn-machine-setting:focus {
+  background: #F57C00; /* Darker orange on hover */
+  color: #000000; /* Black text */
+}
+
+.btn-secondary.btn-ot:hover, .btn-secondary.btn-ot:focus {
+  background: #1976D2; /* Darker blue on hover */
+  color: #000000; /* Black text */
 }
 
 .manual-input-toggle-btn {

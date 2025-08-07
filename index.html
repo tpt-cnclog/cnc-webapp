@@ -229,11 +229,15 @@
 <span>งานเสร็จสิ้น</span>
 </button>
 </div>
-<!-- Daily Report Button -->
-<div class="btn-row" style="margin-top: 10px; margin-bottom: 10px;">
+<!-- Daily Report and QC Report Buttons -->
+<div class="btn-row secondary-btn-row" style="margin-top: 10px; margin-bottom: 10px;">
 <button class="btn-secondary daily-report secondary-btn" onclick="showDailyReportModal()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#4CAF50; color:#ffffff;">
 <i class="fas fa-chart-bar" style="font-size:1.3em;"></i>
 <span>รายงานประจำวัน</span>
+</button>
+<button class="btn-secondary qc-report secondary-btn" onclick="showQCReportModal()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#9C27B0; color:#ffffff;">
+<i class="fas fa-clipboard-check" style="font-size:1.3em;"></i>
+<span>QC Report</span>
 </button>
 </div>
 <div class="btn-row secondary-btn-row">
@@ -251,7 +255,8 @@
 <i class="fas fa-cogs" style="font-size:1.3em;"></i>
 <span>Machine Setting</span>
 </button>
-<button class="btn-secondary btn-ot secondary-btn" id="ot-btn" onclick="checkOTStartTime()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#000000;">
+</button>
+<button class="btn-secondary btn-ot secondary-btn" id="ot-btn" onclick="checkOTStartTime()" style="font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; background:#42a5f5; color:#ffffff;">
 <i class="fas fa-clock" style="font-size:1.3em;"></i>
 <span>OT</span>
 </button>
@@ -422,6 +427,50 @@
 <div style="display:flex; gap:12px; justify-content:center;">
 <button type="button" onclick="closeDailyReportModal()" style="padding:12px 24px; border-radius:10px; background:#757575; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ยกเลิก</button>
 <button type="submit" style="padding:12px 24px; border-radius:10px; background:#4CAF50; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">บันทึกรายงาน</button>
+</div>
+</form>
+</div>
+</div>
+<!-- QC Report Modal -->
+<div id="qc-report-modal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
+<div style="background:#fff; border-radius:18px; padding:24px; max-width:500px; width:95%; max-height:90vh; overflow-y:auto; margin:0 auto; box-shadow:0 4px 24px rgba(0,0,0,0.2);">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #9C27B0; padding-bottom:12px;">
+<h2 style="margin:0; color:#7B1FA2;">🔍 QC Report</h2>
+<button onclick="closeQCReportModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+</div>
+<form id="qc-report-form" onsubmit="submitQCReport(event)">
+<!-- Job Information Section -->
+<div style="margin-bottom:24px;">
+<h3 style="color:#7B1FA2; border-bottom:1px solid #9C27B0; padding-bottom:6px; margin-bottom:16px;">ข้อมูลงาน</h3>
+<div style="background:#f3e5f5; border-radius:8px; padding:16px;">
+<p style="margin:8px 0;"><strong>วันที่:</strong> <span id="qc-report-date-display"></span></p>
+<p style="margin:8px 0;"><strong>Project No.:</strong> <span id="qc-report-project-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Customer Name:</strong> <span id="qc-report-customer-name-display"></span></p>
+<p style="margin:8px 0;"><strong>Part Name:</strong> <span id="qc-report-part-name-display"></span></p>
+<p style="margin:8px 0;"><strong>Drawing No.:</strong> <span id="qc-report-drawing-no-display"></span></p>
+<p style="margin:8px 0;"><strong>Quantity Ordered:</strong> <span id="qc-report-quantity-ordered-display"></span></p>
+</div>
+</div>
+<!-- QC Report Section -->
+<div style="margin-bottom:24px;">
+<h3 style="color:#7B1FA2; border-bottom:1px solid #9C27B0; padding-bottom:6px; margin-bottom:16px;">QC Report</h3>
+<div style="margin-bottom:16px;">
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">รหัสพนักงาน *:</label>
+<input type="text" name="employeeCode" id="qc-report-employee-code" required placeholder="เช่น A0001" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="width:100%; padding:10px; border:2px solid #9C27B0; border-radius:8px; font-size:1rem; text-transform: uppercase;">
+</div>
+<div style="margin-bottom:16px;">
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">FG จำนวน *:</label>
+<input type="number" name="fg" id="qc-report-fg" min="0" required placeholder="0" style="width:100%; padding:10px; border:2px solid #9C27B0; border-radius:8px; font-size:1rem;">
+</div>
+<div style="margin-bottom:16px;">
+<label style="display:block; font-weight:600; margin-bottom:4px; color:#333;">Remark:</label>
+<textarea name="remark" id="qc-report-remark" rows="3" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" style="width:100%; padding:10px; border:2px solid #9C27B0; border-radius:8px; font-size:1rem; resize:vertical;"></textarea>
+</div>
+</div>
+<!-- Action Buttons -->
+<div style="display:flex; gap:12px; justify-content:center;">
+<button type="button" onclick="closeQCReportModal()" style="padding:12px 24px; border-radius:10px; background:#757575; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">ยกเลิก</button>
+<button type="submit" style="padding:12px 24px; border-radius:10px; background:#9C27B0; color:#fff; border:none; font-size:1.1rem; cursor:pointer;">บันทึก QC</button>
 </div>
 </form>
 </div>

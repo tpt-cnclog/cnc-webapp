@@ -1261,6 +1261,72 @@ function submitDailyReport(data) {
   }
 }
 
+/**
+ * Submit QC report data to the main CNC LOG sheet
+ */
+function submitQCReport(data) {
+  try {
+    console.log('Submitting QC Report:', JSON.stringify(data));
+    
+    const sheet = getCNCLogSheet();
+    const now = new Date();
+    
+    // Get next log number
+    let logNos = [];
+    if (sheet.getLastRow() > 1) {
+      logNos = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
+    }
+    const maxLogNo = logNos.length ? Math.max(...logNos.filter(n => !isNaN(n) && n !== "")) : 0;
+    const logNo = maxLogNo + 1;
+    
+    // Create QC row with instant completion
+    const row = [
+      logNo,                                    // 1. Log No.
+      data.projectNo || "",                     // 2. Project No.
+      data.customerName || "",                  // 3. Customer Name
+      data.partName || "",                      // 4. Part Name
+      "'" + (data.drawingNo || ""),            // 5. Drawing No.
+      data.quantityOrdered || "",               // 6. Quantity Ordered
+      "QC",                                     // 7. Process Name
+      "-",                                      // 8. Process No.
+      "-",                                      // 9. Step No.
+      "-",                                      // 10. Machine No.
+      data.employeeCode || "",                  // 11. รหัสพนักงาน (who started)
+      now,                                      // 12. Start Time
+      data.employeeCode || "",                  // 13. รหัสพนักงานที่จบงาน (who ended)
+      now,                                      // 14. End Time (same as start - instant)
+      "-",                                      // 15. Process Time (QC is instant)
+      data.fg || 0,                            // 16. FG
+      0,                                        // 17. NG (QC doesn't produce NG)
+      0,                                        // 18. Rework (QC doesn't produce rework)
+      "CLOSE",                                  // 19. Status (immediately closed)
+      "",                                       // 20. Pause Times
+      "",                                       // 21. Total Downtime
+      "",                                       // 22. Total Normal Pause
+      "",                                       // 23. Total Pause Time
+      JSON.stringify([]),                       // 24. Pause time Json
+      "",                                       // 25. เหตุผลพักงาน
+      JSON.stringify([]),                       // 26. OT Times (Json)
+      "",                                       // 27. OT Times
+      "",                                       // 28. OT Duration
+      data.remark || ""                         // 29. Remark
+    ];
+    
+    console.log("Appending QC row:", row);
+    sheet.appendRow(row);
+    
+    // Format the new row using the standard formatting function
+    formatLastRow();
+    
+    SpreadsheetApp.flush();
+    
+    return true;
+    
+  } catch (error) {
+    throw new Error('เกิดข้อผิดพลาดในการบันทึก QC Report: ' + error.toString());
+  }
+}
+
 // ========================================
 // WEB SERVICE FUNCTIONS
 // ========================================
@@ -1278,6 +1344,13 @@ function doPost(e) {
     // Handle daily report submission
     if (data.action === 'DAILY_REPORT') {
       submitDailyReport(data);
+      return ContentService.createTextOutput("OK")
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+    
+    // Handle QC report submission  
+    if (data.action === 'QC_REPORT') {
+      submitQCReport(data);
       return ContentService.createTextOutput("OK")
         .setMimeType(ContentService.MimeType.TEXT);
     }
