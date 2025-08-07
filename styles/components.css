@@ -254,10 +254,10 @@
   grid-gap: 12px;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  width: 95%;
   max-width: 1000px;
-  margin-left: 15px;
-  margin-right: 15px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Duplicate rule removed - merged with previous .btn-row.secondary-btn-row */
