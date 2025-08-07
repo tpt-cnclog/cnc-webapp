@@ -306,14 +306,22 @@ function formatPauseTimesSummary(pauseTimes, otSessions) {
   
   pauseTimes.forEach(function(p) {
     if (p.pause && p.resume) {
-      // Use accurate calculation that considers actual OT sessions
+      // Completed pauses - แสดงการหยุดงานที่เสร็จสิ้นแล้ว
       var duration = msToHHMMSS(calculatePauseTimeWithOTSessions(new Date(p.pause), new Date(p.resume), otSessions));
       var typeLabel = (p.type === 'DOWNTIME') ? 'Downtime' : 'Normal Pause';
       var reason = p.reason ? ' - ' + p.reason : '';
       var pauseStart = p.pause_local || formatLocalTimestamp(p.pause);
       var pauseEnd = p.resume_local || formatLocalTimestamp(p.resume);
       
-      validPauses.push(counter + '. ' + typeLabel + ': ' + pauseStart + ' to ' + pauseEnd + ' (' + duration + ')' + reason);
+      validPauses.push(counter + '. ' + typeLabel + ': ' + pauseStart + ' ถึง ' + pauseEnd + ' (' + duration + ')' + reason);
+      counter++;
+    } else if (p.pause && !p.resume) {
+      // Active pause - แสดงการหยุดงานที่กำลังดำเนินอยู่
+      var typeLabel = (p.type === 'DOWNTIME') ? 'Downtime' : 'Normal Pause';
+      var reason = p.reason ? ' - ' + p.reason : '';
+      var pauseStart = p.pause_local || formatLocalTimestamp(p.pause);
+      
+      validPauses.push(counter + '. ' + typeLabel + ': ' + pauseStart + ' ถึง [กำลังหยุด]' + reason);
       counter++;
     }
   });

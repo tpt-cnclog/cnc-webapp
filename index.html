@@ -283,19 +283,7 @@
 <form class="form-section" id="stop-form" onsubmit="submitStop(event)" style="display:none;">
 <button class="btn-back" onclick="showScreen('info-screen')" type="button">← กลับไปก่อนหน้า</button>
 <h2>งานเสร็จสิ้น</h2>
-<div class="job-info" id="stop-job-info"> </div>
-<label>Process Name:</label>
-<select name="processName" required="">
-<option value="">เลือก</option>
-<option>CL</option><option>MC</option><option>GR</option><option>WC</option><option>ML</option>
-<option>BL</option><option>CRP</option><option>MRP</option><option>NC</option><option>QC</option><option>Rework</option><option value="Machine Setting">Machine Setting</option>
-</select>
-<label>Process No.:</label>
-<input inputmode="numeric" max="20" min="1" name="processNo" required="" type="number"/>
-<label>Step No.:</label>
-<input name="stepNo" onblur="validateStepNo(this)" pattern="^[0-9]+(\+[0-9]+)*$" placeholder="เช่น: 1 หรือ 1+2+3" required="" type="text"/>
-<label>Machine No.:</label>
-<input name="machineNo" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: MC01" required="" style="text-transform: uppercase;"/>
+<div class="job-info" id="stop-job-info"> </div> 
 <label>รหัสพนักงาน:</label>
 <input name="employeeCode" oninput="this.value = this.value.toUpperCase()" placeholder="เช่น: A0001" required="" style="text-transform: uppercase;"/>
 <div class="stop-extra-field" id="fg-row">
