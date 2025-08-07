@@ -1,5 +1,5 @@
 // Simple Service Worker for PWA
-const CACHE_NAME = 'cnc-job-log-v2';
+const CACHE_NAME = 'cnc-job-log-v3';
 const urlsToCache = [
   './',
   './index.html',
