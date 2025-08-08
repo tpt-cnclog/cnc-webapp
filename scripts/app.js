@@ -1,5 +1,37 @@
 // app.js - Main application initialization and remaining core functions
-// Contains application startup logic, remaining utility functions, and event listeners setup
+// Contains application startup, remaining utility functions, and event listeners setup
+
+// Global variables for application state
+let html5QrcodeScanner = null;
+
+/**
+ * Initial data and form reset
+ */
+function resetAll() {
+    hideAllScreens();
+    showScreen('scan-screen');
+    clearData();
+    
+    // Reset all forms
+    document.getElementById('start-form').reset();
+    document.getElementById('stop-form').reset();
+    
+    // Clear job info displays
+    const jobInfoElements = ['job-info', 'start-job-info', 'stop-job-info'];
+    jobInfoElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.innerHTML = '';
+    });
+    
+    // Clear any selected job data
+    window._selectedJobForStop = null;
+    
+    // Restart QR scanner if needed
+    if (html5QrcodeScanner && typeof html5QrcodeScanner.clear === 'function') {
+        html5QrcodeScanner.clear();
+    }
+    setupQRScanner();
+}
 
 /**
  * Check if OT start time is valid before showing OT modal
@@ -106,12 +138,25 @@ function fetchOpenJobsAndShowPauseSelector() {
  */
 function selectOpenJob(idx) {
     const job = window._openJobs[idx];
-    // Prefill STOP form fields
-    document.querySelector('#stop-form [name="processName"]').value = job.processName;
-    document.querySelector('#stop-form [name="processNo"]').value = job.processNo;
-    document.querySelector('#stop-form [name="stepNo"]').value = job.stepNo;
-    document.querySelector('#stop-form [name="machineNo"]').value = job.machineNo;
+    
+    // Store the selected job globally for use in submitStop()
+    window._selectedJobForStop = job;
+    
+    // Only set the employeeCode field that actually exists in the stop form
     document.querySelector('#stop-form [name="employeeCode"]').value = job.employeeCode || '';
+    
+    // Display job information in the stop-job-info div
+    const stopJobInfo = document.getElementById('stop-job-info');
+    if (stopJobInfo) {
+        stopJobInfo.innerHTML = `
+            <div style="background:#f5f5f5; padding:12px; border-radius:8px; margin-bottom:16px;">
+                <p><strong>Process Name:</strong> ${job.processName}</p>
+                <p><strong>Process No.:</strong> ${job.processNo}</p>
+                <p><strong>Step No.:</strong> ${job.stepNo}</p>
+                <p><strong>Machine No.:</strong> ${job.machineNo || 'N/A'}</p>
+            </div>
+        `;
+    }
     
     closeOpenJobsSelector();
     showScreen('stop-form');

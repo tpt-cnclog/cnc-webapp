@@ -77,14 +77,26 @@ function submitStop(event) {
     window.isSubmitting = true;
     showScreen('loading-screen');
     
+    // Validate that we have a selected job
+    if (!window._selectedJobForStop) {
+        alert('ไม่พบข้อมูลงานที่เลือก กรุณาเลือกงานใหม่');
+        window.isSubmitting = false;
+        showScreen('info-screen');
+        return;
+    }
+    
     const form = document.getElementById('stop-form');
     const formData = new FormData(form);
+    const selectedJob = window._selectedJobForStop;
+    
     const data = {
         ...qrData,
-        processName: formData.get('processName'),
-        processNo: formData.get('processNo'),
-        stepNo: formData.get('stepNo'),
-        machineNo: formData.get('machineNo'),
+        // Use stored job data instead of form data for job identification
+        processName: selectedJob.processName,
+        processNo: selectedJob.processNo,
+        stepNo: selectedJob.stepNo,
+        machineNo: selectedJob.machineNo,
+        // Get user input from form
         employeeCode: formData.get('employeeCode'),
         fg: formData.get('fg'),
         ng: formData.get('ng'),
@@ -105,6 +117,8 @@ function submitStop(event) {
             alert(text.trim().replace("ERROR: ", ""));
             showScreen('info-screen');
         } else {
+            // Clear the selected job after successful submission
+            window._selectedJobForStop = null;
             showScreen('confirm-screen');
         }
     })
@@ -211,12 +225,24 @@ function stopSelectedJob(idx) {
     const job = window._openJobs[idx];
     if (!job) return;
     
-    // Prefill STOP form fields
-    document.querySelector('#stop-form [name="processName"]').value = job.processName;
-    document.querySelector('#stop-form [name="processNo"]').value = job.processNo;
-    document.querySelector('#stop-form [name="stepNo"]').value = job.stepNo;
-    document.querySelector('#stop-form [name="machineNo"]').value = job.machineNo;
+    // Store the selected job globally for use in submitStop()
+    window._selectedJobForStop = job;
+    
+    // Only set the employeeCode field that actually exists in the stop form
     document.querySelector('#stop-form [name="employeeCode"]').value = job.employeeCode || '';
+    
+    // Display job information in the stop-job-info div
+    const stopJobInfo = document.getElementById('stop-job-info');
+    if (stopJobInfo) {
+        stopJobInfo.innerHTML = `
+            <div style="background:#f5f5f5; padding:12px; border-radius:8px; margin-bottom:16px;">
+                <p><strong>Process Name:</strong> ${job.processName}</p>
+                <p><strong>Process No.:</strong> ${job.processNo}</p>
+                <p><strong>Step No.:</strong> ${job.stepNo}</p>
+                <p><strong>Machine No.:</strong> ${job.machineNo || 'N/A'}</p>
+            </div>
+        `;
+    }
     
     // Update the form fields display based on process name
     updateStopFormFields();

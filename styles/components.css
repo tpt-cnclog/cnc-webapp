@@ -266,6 +266,11 @@
   margin-right: auto;
 }
 
+/* First secondary button row (Daily Report & QC Report) needs more spacing */
+.btn-row.secondary-btn-row.first-row {
+  margin-top: 40px;
+}
+
 .btn-row button,
 .btn-row .btn-secondary {
   width: 100%;
