@@ -89,6 +89,10 @@ function submitStop(event) {
     const formData = new FormData(form);
     const selectedJob = window._selectedJobForStop;
     
+    // Check if this is a Machine Setting job
+    const isMachineSetting = selectedJob.processName && 
+        selectedJob.processName.trim().toLowerCase() === 'machine setting';
+    
     const data = {
         ...qrData,
         // Use stored job data instead of form data for job identification
@@ -98,9 +102,10 @@ function submitStop(event) {
         machineNo: selectedJob.machineNo,
         // Get user input from form
         employeeCode: formData.get('employeeCode'),
-        fg: formData.get('fg'),
-        ng: formData.get('ng'),
-        rework: formData.get('rework'),
+        // For Machine Setting, use 0 values; for others, use form values
+        fg: isMachineSetting ? 0 : formData.get('fg'),
+        ng: isMachineSetting ? 0 : formData.get('ng'),
+        rework: isMachineSetting ? 0 : formData.get('rework'),
         status: 'CLOSE'
     };
 
@@ -415,14 +420,17 @@ function continueSelectedJob(idx) {
 }
 
 /**
- * Updates stop form fields based on process name selection
+ * Updates stop form fields based on selected job's process name
  * Shows/hides FG, NG, Rework fields based on whether "Machine Setting" is selected
  */
 function updateStopFormFields() {
     const stopForm = document.getElementById('stop-form');
     if (!stopForm) return;
     
-    const processNameSelect = stopForm.querySelector('[name="processName"]');
+    // Get the selected job instead of looking for form field
+    const selectedJob = window._selectedJobForStop;
+    if (!selectedJob) return;
+    
     const fgInput = stopForm.querySelector('[name="fg"]');
     const ngInput = stopForm.querySelector('[name="ng"]');
     const reworkInput = stopForm.querySelector('[name="rework"]');
@@ -430,30 +438,35 @@ function updateStopFormFields() {
     const ngRow = document.getElementById('ng-row');
     const reworkRow = document.getElementById('rework-row');
     
-    if (!processNameSelect || !fgInput || !ngInput || !reworkInput || !fgRow || !ngRow || !reworkRow) return;
+    if (!fgInput || !ngInput || !reworkInput || !fgRow || !ngRow || !reworkRow) return;
     
-    function updateFields() {
-        const selected = processNameSelect.value.replace(/\s+/g, ' ').trim().toLowerCase();
-        if (selected === 'machine setting') {
-            fgInput.required = false;
-            ngInput.required = false;
-            reworkInput.required = false;
-            fgRow.style.display = 'none';
-            ngRow.style.display = 'none';
-            reworkRow.style.display = 'none';
-        } else {
-            fgInput.required = true;
-            ngInput.required = true;
-            reworkInput.required = true;
-            fgRow.style.display = '';
-            ngRow.style.display = '';
-            reworkRow.style.display = '';
-        }
+    // Check if the selected job is Machine Setting
+    const isMachineSetting = selectedJob.processName && 
+        selectedJob.processName.trim().toLowerCase() === 'machine setting';
+    
+    if (isMachineSetting) {
+        // Hide FG/NG/Rework fields for Machine Setting
+        fgInput.required = false;
+        ngInput.required = false;
+        reworkInput.required = false;
+        fgInput.value = '0'; // Set default values
+        ngInput.value = '0';
+        reworkInput.value = '0';
+        fgRow.style.display = 'none';
+        ngRow.style.display = 'none';
+        reworkRow.style.display = 'none';
+    } else {
+        // Show FG/NG/Rework fields for regular processes
+        fgInput.required = true;
+        ngInput.required = true;
+        reworkInput.required = true;
+        fgInput.value = ''; // Clear default values
+        ngInput.value = '';
+        reworkInput.value = '';
+        fgRow.style.display = '';
+        ngRow.style.display = '';
+        reworkRow.style.display = '';
     }
-    
-    processNameSelect.removeEventListener('change', updateFields);
-    processNameSelect.addEventListener('change', updateFields);
-    updateFields();
 }
 
 /**

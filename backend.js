@@ -1014,10 +1014,9 @@ function submitLog(data) {
         }
         if (row[18] == "OPEN" || row[18] == "OT") {
           // --- CLOSE LOGIC START ---
-          // Set end employee code and time
+          // Capture end time and employee code (but don't write to sheet yet to avoid race conditions)
           const endTime = new Date();
-          sheet.getRange(i + 1, 13).setValue(data.employeeCode || "");
-          sheet.getRange(i + 1, 14).setValue(endTime);
+          const endEmployeeCode = data.employeeCode || "";
           
           // Handle OT state first if we're in OT
           if (row[18] === "OT") {
@@ -1123,8 +1122,17 @@ function submitLog(data) {
           if (processMs < 0) processMs = 0;
           sheet.getRange(i + 1, 15).setValue(msToHHMMSSWithPlaceholder(processMs));
 
+          // *** CRITICAL: Set end time and employee code at the very end to prevent race conditions ***
+          sheet.getRange(i + 1, 13).setValue(endEmployeeCode);
+          sheet.getRange(i + 1, 14).setValue(endTime);
+          
+          // Force immediate write to ensure end time is preserved
+          SpreadsheetApp.flush();
+
           // Format row
           formatRow(i + 1);
+          
+          // Final flush to ensure all changes are committed
           SpreadsheetApp.flush();
           found = true;
           return;
