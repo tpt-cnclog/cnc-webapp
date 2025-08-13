@@ -646,8 +646,8 @@ function submitQCReport(event) {
         ...qrData,
         employeeCode: formData.get('employeeCode'),
         fg: parseInt(formData.get('fg')) || 0,
-        ng: 0, // QC doesn't produce NG
-        rework: 0, // QC doesn't produce rework
+        ng: parseInt(formData.get('ng')) || 0,
+        rework: parseInt(formData.get('rework')) || 0,
         remark: formData.get('remark') || '',
         processName: 'QC',
         processNo: 1,
