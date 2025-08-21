@@ -78,6 +78,15 @@ const OT_HOURS = {
   START: { h: 17, m: 30 },
   END: { h: 22, m: 30 }
 };
+  // Utility to extract MFG value from QR code JSON
+  function extractMFGField(data) {
+    if (!data || !data.MFG) return '';
+    if (Array.isArray(data.MFG)) {
+      return data.MFG.join(',');
+    }
+    return data.MFG;
+  }
+  // ...existing code...
 
 // ========================================
 // DATA VALIDATION AND SAFETY FUNCTIONS
@@ -1065,32 +1074,41 @@ function submitLog(data) {
     }
     const maxLogNo = logNos.length ? Math.max(...logNos.filter(n => !isNaN(n) && n !== "")) : 0;
     const logNo = maxLogNo + 1;
-    const row = [
-      logNo,
-      data.projectNo || "",
-      data.customerName || "",
-      data.partName || "",
-      "'" + (data.drawingNo || ""),
-      data.quantityOrdered || "",
-      data.processName || "",
-      data.processNo || "",
-      data.stepNo || "",
-      data.machineNo || "",
-      data.employeeCode || "",
-      new Date(),
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "OPEN",
-      "",
-      "",
-      "",
-      "",
-      JSON.stringify([])
-    ];
+      const row = [
+  logNo,
+  data.projectNo || "",
+  data.customerName || "",
+  data.partName || "",
+  "'" + (data.drawingNo || ""),
+  data.quantityOrdered || "",
+  data.processName || "",
+  data.processNo || "",
+  data.stepNo || "",
+  data.machineNo || "",
+  data.employeeCode || "",
+  new Date(),
+  "", // End Employee Code
+  "", // End Time
+  "", // Process Time
+  "", // FG
+  "", // NG
+  "", // Rework
+  "OPEN", // Status
+  "", // Pause Times
+  "", // Total Downtime
+  "", // Total Normal Pause
+  "", // Total Pause Time
+  JSON.stringify([]), // Pause time Json
+  "", // เหตุผลพักงาน
+  "", // OT Times (Json)
+  "", // OT Times
+  "", // OT Duration
+  "", // Remark
+  extractMFGField(data), // MFG
+  "", // Date
+  ""  // Month
+      ];
+  console.log('MFG value to append:', extractMFGField(data));
     console.log("Appending row:", row);
     sheet.appendRow(row);
     console.log("Row appended successfully");
@@ -1239,10 +1257,21 @@ function submitLog(data) {
           console.log('🔄 Starting CLOSE operation for row:', i + 1);
           
           try {
-            // Capture end time and employee code
+            // Capture end time and employee code with debugging
             const endTime = new Date();
             const endEmployeeCode = data.employeeCode || "";
             const startTime = row[11] instanceof Date ? row[11] : new Date(row[11]);
+            
+            // DEBUG: Log critical variables for Machine Setting
+            console.log('🔍 CLOSE DEBUG INFO:', {
+              processName: row[6],
+              isMachineSetting: normalize(row[6]) === normalize('Machine Setting'),
+              endTime: endTime,
+              endTimeType: typeof endTime,
+              endTimeValid: endTime instanceof Date,
+              endTimeISO: endTime.toISOString(),
+              endEmployee: endEmployeeCode
+            });
             
             // Parse existing data with error handling
             let pauseTimes = [];
@@ -1313,32 +1342,130 @@ function submitLog(data) {
 
             // TRUE ATOMIC UPDATE - Single API call for ALL data (columns 13-28)
             const updateRange = sheet.getRange(i + 1, 13, 1, 16); // 16 columns: 13 to 28
+
+            // Ensure endTime is a proper Date object and convert to string if needed
+            let safeEndTime = endTime instanceof Date ? endTime : new Date(endTime);
+            if (isNaN(safeEndTime.getTime())) {
+              // fallback to current time if invalid
+              safeEndTime = new Date();
+            }
+            // Format as 'd/M/yyyy, HH:mm:ss' in Asia/Bangkok timezone
+            const endTimeValue = Utilities.formatDate(safeEndTime, 'Asia/Bangkok', 'd/M/yyyy, HH:mm:ss');
+
+            // Validate all update values
             const updateValues = [[
-              endEmployeeCode,                                        // Column 13: End Employee
-              endTime,                                               // Column 14: End Time
-              msToHHMMSSWithPlaceholder(processMs),                  // Column 15: Process Time
-              fgValue,                                               // Column 16: FG
-              ngValue,                                               // Column 17: NG
-              reworkValue,                                           // Column 18: Rework
+              endEmployeeCode || '',                                 // Column 13: End Employee
+              endTimeValue,                                          // Column 14: End Time (validated)
+              msToHHMMSSWithPlaceholder(processMs) || '',            // Column 15: Process Time
+              fgValue != null ? fgValue : '',                        // Column 16: FG
+              ngValue != null ? ngValue : '',                        // Column 17: NG
+              reworkValue != null ? reworkValue : '',                // Column 18: Rework
               "CLOSE",                                               // Column 19: Status
-              formatPauseTimesSummary(pauseTimes, otTimes),          // Column 20: Pause Summary
-              msToHHMMSSWithPlaceholder(totalDowntime),              // Column 21: Downtime
-              msToHHMMSSWithPlaceholder(totalNormalPause),           // Column 22: Normal Pause
-              msToHHMMSSWithPlaceholder(totalPaused),                // Column 23: Total Pause
-              JSON.stringify(pauseTimes),                            // Column 24: Pause JSON
-              formatReasonSummary(pauseTimes),                       // Column 25: Reason Summary
-              JSON.stringify(otTimes),                               // Column 26: OT JSON
-              formatOtTimesSummary(otTimes),                         // Column 27: OT Summary
-              msToHHMMSSWithPlaceholder(totalOtMs)                   // Column 28: OT Duration
+              formatPauseTimesSummary(pauseTimes, otTimes) || '',    // Column 20: Pause Summary
+              msToHHMMSSWithPlaceholder(totalDowntime) || '',        // Column 21: Downtime
+              msToHHMMSSWithPlaceholder(totalNormalPause) || '',     // Column 22: Normal Pause
+              msToHHMMSSWithPlaceholder(totalPaused) || '',          // Column 23: Total Pause
+              JSON.stringify(pauseTimes) || '',                      // Column 24: Pause JSON
+              formatReasonSummary(pauseTimes) || '',                 // Column 25: Reason Summary
+              JSON.stringify(otTimes) || '',                         // Column 26: OT JSON
+              formatOtTimesSummary(otTimes) || '',                   // Column 27: OT Summary
+              msToHHMMSSWithPlaceholder(totalOtMs) || ''             // Column 28: OT Duration
             ]];
+
+            // Log the values being written
+            console.log('📝 ATOMIC UPDATE DEBUG:', {
+              rowNumber: i + 1,
+              processName: row[6],
+              isMachineSetting: normalize(row[6]) === normalize('Machine Setting'),
+              originalEndTime: endTime,
+              safeEndTime: safeEndTime,
+              endTimeValue: endTimeValue,
+              updateValues_preview: {
+                column13_endEmployee: updateValues[0][0],
+                column14_endTime: updateValues[0][1],
+                column14_endTime_type: typeof updateValues[0][1],
+                column14_endTime_valid: !!updateValues[0][1],
+                column15_processTime: updateValues[0][2],
+                column19_status: updateValues[0][6]
+              }
+            });
+
+            // SPECIAL MACHINE SETTING DEBUG: Try individual cell write for end time
+            let atomicWriteSuccess = false;
+            try {
+              updateRange.setValues(updateValues);
+              SpreadsheetApp.flush();
+              atomicWriteSuccess = true;
+              console.log('✅ Atomic write successful');
+            } catch (writeError) {
+              console.error('❌ Atomic write failed:', writeError);
+              console.error('❌ Failed values:', updateValues);
+              // Fallback: try to write End Time individually
+              try {
+                const endTimeCell = sheet.getRange(i + 1, 14, 1, 1);
+                endTimeCell.setValue(endTimeValue);
+                SpreadsheetApp.flush();
+                const verifyEndTime = endTimeCell.getValue();
+                console.log('🔧 Fallback individual end time write:', {
+                  writtenValue: verifyEndTime,
+                  valueType: typeof verifyEndTime,
+                  isEmpty: !verifyEndTime || verifyEndTime === ""
+                });
+              } catch (individualError) {
+                console.error('🔧 Individual end time write failed:', individualError);
+              }
+              throw new Error(`เกิดข้อผิดพลาดในการเขียนข้อมูล: ${writeError.message}`);
+            }
 
             // SINGLE ATOMIC WRITE - All data written in one API call
             console.log('📝 Executing TRULY atomic write of 16 columns');
-            updateRange.setValues(updateValues);
+            try {
+              updateRange.setValues(updateValues);
+              console.log('✅ Atomic write successful');
+            } catch (writeError) {
+              console.error('❌ Atomic write failed:', writeError);
+              console.error('❌ Failed values:', updateValues);
+              throw new Error(`เกิดข้อผิดพลาดในการเขียนข้อมูล: ${writeError.message}`);
+            }
             
             // Single flush after the atomic write
             SpreadsheetApp.flush();
             console.log('✅ CLOSE operation completed successfully with atomic write');
+            
+            // VERIFICATION: Read back the data to confirm it was written correctly
+            try {
+              const verificationRange = sheet.getRange(i + 1, 13, 1, 7); // Check first 7 columns of the update
+              const writtenValues = verificationRange.getValues()[0];
+              console.log('🔍 VERIFICATION - Data written to sheet:', {
+                column13_endEmployee: writtenValues[0],
+                column14_endTime: writtenValues[1],
+                column15_processTime: writtenValues[2],
+                column16_fg: writtenValues[3],
+                column17_ng: writtenValues[4],
+                column18_rework: writtenValues[5],
+                column19_status: writtenValues[6],
+                endTimeCheck: writtenValues[1] ? 'END_TIME_SAVED' : 'END_TIME_MISSING'
+              });
+              
+              // SPECIAL MACHINE SETTING VERIFICATION
+              if (normalize(row[6]) === normalize('Machine Setting')) {
+                console.log('🔧 MACHINE SETTING END TIME SPECIFIC VERIFICATION:');
+                const endTimeOnly = sheet.getRange(i + 1, 14, 1, 1).getValue();
+                console.log('🔧 Direct end time cell read:', {
+                  cellValue: endTimeOnly,
+                  cellType: typeof endTimeOnly,
+                  cellEmpty: !endTimeOnly || endTimeOnly === "",
+                  cellString: String(endTimeOnly),
+                  cellDate: endTimeOnly instanceof Date ? endTimeOnly.toISOString() : 'NOT_A_DATE'
+                });
+                
+                // Check cell formatting
+                const cellFormat = sheet.getRange(i + 1, 14, 1, 1).getNumberFormat();
+                console.log('🔧 End time cell format:', cellFormat);
+              }
+            } catch (verifyError) {
+              console.error('⚠️ Verification failed:', verifyError);
+            }
             
             // Apply formatting with verification
             try {
@@ -1561,53 +1688,30 @@ function submitQCReport(data) {
 // ========================================
 
 function doPost(e) {
-  console.log('📨 Received POST request');
   var data = {};
-  
   try {
     data = JSON.parse(e.postData.contents);
-    console.log('📋 Parsed request data:', JSON.stringify(data, null, 2));
   } catch (err) {
-    console.error('❌ Invalid JSON in request:', err);
-    return ContentService.createTextOutput("ERROR: Invalid JSON format")
-      .setMimeType(ContentService.MimeType.TEXT);
+    return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: "Invalid JSON format" }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  
   try {
-    // Handle daily report submission
     if (data.action === 'DAILY_REPORT') {
-      console.log('📊 Processing daily report submission');
       submitDailyReport(data);
-      console.log('✅ Daily report submitted successfully');
-      return ContentService.createTextOutput("OK")
-        .setMimeType(ContentService.MimeType.TEXT);
+      return ContentService.createTextOutput(JSON.stringify({ status: "OK" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
-    
-    // Handle QC report submission  
     if (data.action === 'QC_REPORT') {
-      console.log('🔍 Processing QC report submission');
       submitQCReport(data);
-      console.log('✅ QC report submitted successfully');
-      return ContentService.createTextOutput("OK")
-        .setMimeType(ContentService.MimeType.TEXT);
+      return ContentService.createTextOutput(JSON.stringify({ status: "OK" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
-    
-    // Handle regular job log submission  
-    console.log('🏭 Processing job log submission');
     submitLog(data);
-    console.log('✅ Job log submitted successfully');
-    return ContentService.createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT);
-      
+    return ContentService.createTextOutput(JSON.stringify({ status: "OK" }))
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    console.error('❌ Critical error in doPost:', err);
-    
-    // Return detailed error information
-    const errorMessage = `ERROR: ${err.message}`;
-    console.error('📤 Returning error to client:', errorMessage);
-    
-    return ContentService.createTextOutput(errorMessage)
-      .setMimeType(ContentService.MimeType.TEXT);
+    return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 

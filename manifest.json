@@ -1,6 +1,6 @@
 {
   "name": "TPT-CNC JOB LOG",
-  "short_name": "CNC Log",
+  "short_name": "TPT CNC LOG",
   "description": "CNC Job Logging Application for TPT Manufacturing",
   "start_url": "./",
   "display": "standalone",

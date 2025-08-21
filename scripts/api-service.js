@@ -17,7 +17,6 @@ async function fetchOpenJobs(projectNo, partName) {
     projectNo: projectNo || '',
     partName: partName || ''
   });
-  
   try {
     const response = await fetch(`${GAS_ENDPOINT}?${params.toString()}`);
     if (!response.ok) {
@@ -42,7 +41,6 @@ async function fetchPausedJobs(projectNo, partName) {
     projectNo: projectNo || '',
     partName: partName || ''
   });
-  
   try {
     const response = await fetch(`${GAS_ENDPOINT}?${params.toString()}`);
     if (!response.ok) {
@@ -72,20 +70,15 @@ async function submitStartJob(jobData) {
         ...jobData
       })
     });
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    const text = await response.text();
-    
-    // Handle error responses that start with "ERROR:"
-    if (text.trim().startsWith("ERROR:")) {
-      return { error: text.trim().replace("ERROR: ", "") };
+    const result = await response.json();
+    if (result.status === "OK") {
+      return { success: true };
+    } else {
+      return { error: result.message || "Unknown error" };
     }
-    
-    // For successful responses, return the text as success
-    return { success: text.trim() };
   } catch (error) {
     console.error('Error submitting start job:', error);
     throw error;
@@ -109,20 +102,15 @@ async function submitStopJob(jobData) {
         ...jobData
       })
     });
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    const text = await response.text();
-    
-    // Handle error responses that start with "ERROR:"
-    if (text.trim().startsWith("ERROR:")) {
-      return { error: text.trim().replace("ERROR: ", "") };
+    const result = await response.json();
+    if (result.status === "OK") {
+      return { success: true };
+    } else {
+      return { error: result.message || "Unknown error" };
     }
-    
-    // For successful responses, return the text as success
-    return { success: text.trim() };
   } catch (error) {
     console.error('Error submitting stop job:', error);
     throw error;
@@ -146,20 +134,15 @@ async function submitPauseJob(jobData) {
         ...jobData
       })
     });
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    const text = await response.text();
-    
-    // Handle error responses that start with "ERROR:"
-    if (text.trim().startsWith("ERROR:")) {
-      return { error: text.trim().replace("ERROR: ", "") };
+    const result = await response.json();
+    if (result.status === "OK") {
+      return { success: true };
+    } else {
+      return { error: result.message || "Unknown error" };
     }
-    
-    // For successful responses, return the text as success
-    return { success: text.trim() };
   } catch (error) {
     console.error('Error submitting pause job:', error);
     throw error;
@@ -183,20 +166,15 @@ async function submitContinueJob(jobData) {
         ...jobData
       })
     });
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    const text = await response.text();
-    
-    // Handle error responses that start with "ERROR:"
-    if (text.trim().startsWith("ERROR:")) {
-      return { error: text.trim().replace("ERROR: ", "") };
+    const result = await response.json();
+    if (result.status === "OK") {
+      return { success: true };
+    } else {
+      return { error: result.message || "Unknown error" };
     }
-    
-    // For successful responses, return the text as success
-    return { success: text.trim() };
   } catch (error) {
     console.error('Error submitting continue job:', error);
     throw error;
